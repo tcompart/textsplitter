@@ -17,7 +17,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.unileipzig.asv.wortschatz.flcr.IOUtil;
+import de.unileipzig.asv.wortschatz.flcr.util.IOUtil;
 
 /**
  * @author <a href="mail:grigull@informatik.uni-leipzig.de">Torsten Grigull</a>

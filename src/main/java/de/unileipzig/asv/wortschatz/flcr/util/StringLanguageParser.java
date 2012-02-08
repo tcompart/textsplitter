@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.unileipzig.asv.wortschatz.flcr;
+package de.unileipzig.asv.wortschatz.flcr.util;
 
 /**
  * @author <a href="mail:grigull@informatik.uni-leipzig.de">Torsten Grigull</a>

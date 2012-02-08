@@ -4,6 +4,7 @@
 package de.unileipzig.asv.wortschatz.flcr;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,12 +46,21 @@ public class LanguageDirectoryMover extends LanguageDependentMover {
 		return this.output;
 	}
 	
-	public void searchDirectories() {
+	public void searchDirectories() throws IOException {
 		for (File directory : this.directories) {			
 			for (File file : directory.listFiles()) {
 				this.copyFile(file, this.getOutputDirectory());
 			}
-		}		
+		}	
+		
+		if (this.bzip_enabled()) {
+			// ugly to use the directory of the directory to get the child files...
+			for (File languageDirectory: this.getOutputDirectory().listFiles()) {
+				for (File languageFile : languageDirectory.listFiles()) {
+					this.bzip(languageFile);
+				}
+			}
+		}
 	}
 	
 }

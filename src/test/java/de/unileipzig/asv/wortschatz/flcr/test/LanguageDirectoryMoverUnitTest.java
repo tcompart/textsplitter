@@ -3,9 +3,13 @@
  */
 package de.unileipzig.asv.wortschatz.flcr.test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Properties;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -31,18 +35,20 @@ public class LanguageDirectoryMoverUnitTest {
 		
 		File directory = new File("./tmp/webcrawl");
 		directory.mkdirs();
-		this.fillDirectory(directory);
 		
 		webcrawl = new LanguageDirectoryMover();
-		webcrawl.setDirectorySuffix("_webcr_2011");
+		webcrawl.setDirectorySuffix("_web-cr_2011");
 		webcrawl.setOutputDirectory(new File("./tmp/tgrigull/flcr/"));
 		
 		stopwort = new File(directory,"Stopwort");
 		stopwort.mkdirs();
+		this.fillDirectory(stopwort);
 		unigramm = new File(directory,"Unigramm");
 		unigramm.mkdirs();
+		this.fillDirectory(unigramm);
 		trigramm = new File(directory,"Trigramm");
 		trigramm.mkdirs();
+		this.fillDirectory(trigramm);
 		
 		webcrawl.addInputDirectory(stopwort);
 		webcrawl.addInputDirectory(unigramm);
@@ -69,10 +75,27 @@ public class LanguageDirectoryMoverUnitTest {
 	}
 
 	@Test
-	public void create() {
+	public void create() throws IOException {
 		
 		webcrawl.searchDirectories();
 		
 	}
+	
+	@Test
+	public void bzipOutputFiles() throws IOException {
+		
+		Properties properties = new Properties();
+		properties.setProperty("file.output.bzip", "true");
+		webcrawl.loadProperties(properties);
+		
+		webcrawl.searchDirectories();
+		
+		for (File languageDirectory : webcrawl.getOutputDirectory().listFiles()) {
+			for (File file : languageDirectory.listFiles()) {
+				assertThat(file.getName().endsWith(".txt.bz2"), is(true));
+			}
+		}
+	}
+
 	
 }

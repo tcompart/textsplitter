@@ -1,12 +1,14 @@
 /**
  * 
  */
-package de.unileipzig.asv.wortschatz.flcr;
+package de.unileipzig.asv.wortschatz.flcr.util;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
+import de.unileipzig.asv.wortschatz.flcr.exception.NotExistingDirectoryException;
 
 /**
  * @author <a href="mail:grigull@informatik.uni-leipzig.de">Torsten Grigull</a>
@@ -14,6 +16,8 @@ import java.io.IOException;
  */
 public class IOUtil {
 	
+	private static final int BUFFER_SIZE = 4096;
+
 	public static File createDirectory(String directory) {
 		File dir = new File(directory);
 		dir.mkdirs();
@@ -61,7 +65,7 @@ public class IOUtil {
 	 * @param destination - the destination file (instance of class {@link File})
 	 * @return <code>true</code> if the content of 'source' could be copied to 'destination'.
 	 */
-	public static boolean copy(File source, File destination) {
+	public static boolean copy(File source, File destination, long limitInBytes) {
 		
 		if (source == null || !source.exists() || !source.isFile() || !source.canRead()) {
 			throw new IllegalArgumentException("The source file has to be initiated with an existing, readable file to be copied.");
@@ -77,8 +81,12 @@ public class IOUtil {
 		try {
 			fis =new FileInputStream(source);
 			fos =new FileOutputStream(destination);
-			
-			byte[] buffer = new byte[4096];
+			// prepare number of file output streams depending on input file size
+			// or returning only one file output stream if limitofbytes = 0
+			// get number or recognize number to increase counter
+			// change file output stream with every reach of limitofbytes
+			// make BUFFER_SIZE configurable
+			byte[] buffer = new byte[BUFFER_SIZE];
 			int read;
 			while ((read =fis.read(buffer)) != -1) {
 				fos.write(buffer,0,read);
@@ -97,7 +105,11 @@ public class IOUtil {
 					return false;
 				}
 		}
-		
 		return true;
+	}
+		
+	public static boolean copy(File source, File destination) {
+		return copy(source, destination, 0);
 	}	
+	
 }

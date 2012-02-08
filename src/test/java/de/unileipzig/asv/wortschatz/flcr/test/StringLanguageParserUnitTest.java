@@ -10,8 +10,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.unileipzig.asv.wortschatz.flcr.StringLanguageParser;
-import de.unileipzig.asv.wortschatz.flcr.StringLanguageParser.LanguageNotFoundException;
+import de.unileipzig.asv.wortschatz.flcr.util.StringLanguageParser;
+import de.unileipzig.asv.wortschatz.flcr.util.StringLanguageParser.LanguageNotFoundException;
 
 /**
  * @author <a href="mail:grigull@informatik.uni-leipzig.de">Torsten Grigull</a>

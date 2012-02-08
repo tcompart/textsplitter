@@ -1,0 +1,32 @@
+ProductBacklog
+
+
+FindLinksWebCrawlerSearch
+
+
+2012/02/08 - ProductBacklog Start
+
+- Eingabe von Findlinks Eingabe-Daten
+- Eingabe von WebCrawl Eingabe-Daten
+
+Eingabe-Daten sind Text-Dateien, folgen einem Pseudo-XML-Schema:
+<EOF
+<source>
+	<location>{URL}</location>
+	<date>{Simple-Date-YYYY-MM-DD}</date>
+	<user>{User}</user>
+	<original_encoding>{Encoding|z.B. iso-8859-1}</original_encoding>
+	<language>{language-3-letter-code}</language>
+</source>
+
+{TEXT}
+EOF
+
+Übersetzung von Ordner-Strukturen wie "{findlinks|webcrawl}/{Unigramm|Trigramm|Stopwort}/{FL|CR_}{3letter-language-code}{4letter-number}.txt"
+zu "flcr/{3letter-language-code}{USER-DEFINED|e.g.'_web-cr_2011'||'_web-fl_2012'}/{3letter-language-code}{USER-DEFINED|e.g.'_web-cr_2011'||'_web-fl_2012'}_{4letter-number}.txt"
+
+Funktionalität bis jetzt:
+Priotität	Nr	Beschreibung			Aufwand	Erledigt?
+Sehr hoch	1	Kopiervorgang vonFL/CR	100		ja
+Hoch		2	Korrektur von fehlerhaften
+				Sprachbezeichnern		20		ja

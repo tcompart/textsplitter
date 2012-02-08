@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.unileipzig.asv.wortschatz.flcr;
+package de.unileipzig.asv.wortschatz.flcr.exception;
 
 import java.io.IOException;
 

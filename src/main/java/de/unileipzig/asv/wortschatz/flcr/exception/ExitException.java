@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.unileipzig.asv.wortschatz.flcr.exit;
+package de.unileipzig.asv.wortschatz.flcr.exception;
 
 /**
  * @author <a href="mail:grigull@informatik.uni-leipzig.de">Torsten Grigull</a>

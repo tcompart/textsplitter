@@ -18,11 +18,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.unileipzig.asv.wortschatz.flcr.IOUtil;
 import de.unileipzig.asv.wortschatz.flcr.WortschatzResourceStart;
-import de.unileipzig.asv.wortschatz.flcr.exit.ExitException;
+import de.unileipzig.asv.wortschatz.flcr.exception.ExitException;
 import de.unileipzig.asv.wortschatz.flcr.listener.EventListener;
 import de.unileipzig.asv.wortschatz.flcr.listener.EventListener.Event;
+import de.unileipzig.asv.wortschatz.flcr.util.IOUtil;
 
 /**
  * @author <a href="mail:grigull@informatik.uni-leipzig.de">Torsten Grigull</a>
@@ -67,9 +67,11 @@ public class WortschatzResourceStartUnitTest {
 		BufferedReader reader = new BufferedReader(new StringReader(WortschatzResourceStart.printHelp()));
 		assertThat(reader.readLine(), is("Supported Parameters:"));
 		assertThat(reader.readLine(), is("\t--help\t\t:\tthis help screen."));
-		assertThat(reader.readLine(), is("\t--findlinks\t:\ta list of directories, which should be used as input for the findlinks data."));
-		assertThat(reader.readLine(), is("\t--webcrawl\t:\ta list of directories, which should be used as input for the web crawl data."));
+		assertThat(reader.readLine(), is("\t--findlinks\t:\ta list of directories, which should be used as input for the findlinks data, or a single value as a main directory for directories like 'Stopwort','Unigramm' and 'Trigramm'."));
+		assertThat(reader.readLine(), is("\t--webcrawl\t:\ta list of directories, which should be used as input for the web crawl data, or a single value as a main directory for directories like 'Stopwort','Unigramm' and 'Trigramm'."));
 		assertThat(reader.readLine(), is("\t--output\t:\ta file path were the output directory should be created."));
+		assertThat(reader.readLine(), is("\t--bzip\t:\tthis option enables the flag for compressing written files. The currently used compress algorithm is provided by bzip2."));
+		assertThat(reader.readLine(), is("\t--filesize\t:\ta value assigned as a value (Long). The value is in MegaByte. Therefore one GigaByte would be: '--filesize 1024'."));
 		assertThat(reader.readLine(), is("\t--properties\t:\tpath to a property file; default: properties.prop. Those are loaded before the start. However highest priority have directly called parameters and their values. See information below of the possible properties and their default values."));
 		assertThat(reader.readLine(), is("\t--dryrun\t:\tfor testing purpose. This creates instances but the copy process is not started. This enables the check of parameters and properties."));
 		assertThat(reader.readLine(), is(""));
@@ -160,13 +162,9 @@ public class WortschatzResourceStartUnitTest {
 				"--output",
 				output.getCanonicalPath(),
 				"--findlinks",
-				findlinksStopwort.getCanonicalPath(),
-				findlinksUnigramm.getCanonicalPath(),
-				findlinksTrigramm.getCanonicalPath(),
+				sourceFindlinks.getCanonicalPath(),
 				"--webcrawl",
-				webcrawlStopwort.getCanonicalPath(),
-				webcrawlUnigramm.getCanonicalPath(),
-				webcrawlTrigramm.getCanonicalPath()
+				sourceWebCrawl.getCanonicalPath(),
 		};
 		
 		assertThat(output.exists(), is(false));
@@ -174,10 +172,10 @@ public class WortschatzResourceStartUnitTest {
 		WortschatzResourceStart.main(arguments);
 		
 		assertThat(output.exists(), is(true));
-		assertThat(output.listFiles()[0].getName(), is("deu_ch_webcr_2011"));
-		assertThat(output.listFiles()[1].getName(), is("deu_ch_webfl_2011"));
-		assertThat(output.listFiles()[2].getName(), is("deu_webcr_2011"));
-		assertThat(output.listFiles()[3].getName(), is("deu_webfl_2011"));
+		assertThat(output.listFiles()[0].getName(), is("deu_ch_web-cr_2011"));
+		assertThat(output.listFiles()[1].getName(), is("deu_ch_web-fl_2011"));
+		assertThat(output.listFiles()[2].getName(), is("deu_web-cr_2011"));
+		assertThat(output.listFiles()[3].getName(), is("deu_web-fl_2011"));
 	}
 
 	/**

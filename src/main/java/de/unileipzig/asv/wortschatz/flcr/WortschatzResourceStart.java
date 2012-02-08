@@ -25,7 +25,7 @@ public class WortschatzResourceStart {
 
 	public static final String PROGRAM_NAME = "flcr - Findlinks & WebCrawl Text File Movement";
 	
-	public static final String VERSION = "0.0.1-SNAPSHOT";
+	public static final String VERSION = "0.0.1";
 	
 	public static final String propertyOutputDirectoryName = "flcr.output.directory";
 	
@@ -33,11 +33,11 @@ public class WortschatzResourceStart {
 
 	public static final String propertyWebCrawlDirectorySuffix = "flcr.output.webcrawl.suffix";
 	
-	public static final String propertyWebCrawlDirectorySuffixDefaultValue = "_webcr_2011";
+	public static final String propertyWebCrawlDirectorySuffixDefaultValue = "_web-cr_2011";
 
 	public static final String propertyFindlinksDirectorySuffix = "flcr.output.findlinks.suffix";
 
-	public static final String propertyFindlinksDirectorySuffixDefaultValue = "_webfl_2011";
+	public static final String propertyFindlinksDirectorySuffixDefaultValue = "_web-fl_2011";
 
 	private static String propertyFileName = "properties.prop";
 	
@@ -47,6 +47,8 @@ public class WortschatzResourceStart {
 
 	private static String resultOutputDirectory;
 
+	private static Properties languageDependentMoverProperties = new Properties();
+	
 	private static boolean DRYRUN = false;
 	
 	/**
@@ -95,6 +97,14 @@ public class WortschatzResourceStart {
 				propertyFileName = result.getValues("--properties").get(0);
 			}
 			
+			if (result.hasParameter("--bzip")) {
+				languageDependentMoverProperties.setProperty("file.output.bzip", "true");
+			}
+			
+			if (result.hasParameter("--filesize") && result.hasValue("--filesize")) {
+				languageDependentMoverProperties.setProperty("file.input.size.max", String.valueOf(new Long(1024*1024)*Long.parseLong(result.getValues("--filesize").get(0))));
+			}
+			
 			if (result.hasParameter("--output") && result.hasValue("--output")) {
 				resultOutputDirectory = result.getValues("--output").get(0);
 			}
@@ -132,9 +142,11 @@ public class WortschatzResourceStart {
 		
 		sb.append("Supported Parameters:\n");
 		sb.append("\t--help\t\t:\tthis help screen.\n");
-		sb.append("\t--findlinks\t:\ta list of directories, which should be used as input for the findlinks data.\n");
-		sb.append("\t--webcrawl\t:\ta list of directories, which should be used as input for the web crawl data.\n");
+		sb.append("\t--findlinks\t:\ta list of directories, which should be used as input for the findlinks data, or a single value as a main directory for directories like 'Stopwort','Unigramm' and 'Trigramm'.\n");
+		sb.append("\t--webcrawl\t:\ta list of directories, which should be used as input for the web crawl data, or a single value as a main directory for directories like 'Stopwort','Unigramm' and 'Trigramm'.\n");
 		sb.append("\t--output\t:\ta file path were the output directory should be created.\n");
+		sb.append("\t--bzip\t:\tthis option enables the flag for compressing written files. The currently used compress algorithm is provided by bzip2.\n");
+		sb.append("\t--filesize\t:\ta value assigned as a value (Long). The value is in MegaByte. Therefore one GigaByte would be: '--filesize 1024'.\n");
 		sb.append("\t--properties\t:\tpath to a property file; default: properties.prop. Those are loaded before the start. However highest priority have directly called parameters and their values. See information below of the possible properties and their default values.\n");
 		sb.append("\t--dryrun\t:\tfor testing purpose. This creates instances but the copy process is not started. This enables the check of parameters and properties.\n");
 		sb.append("\n");
@@ -210,11 +222,17 @@ public class WortschatzResourceStart {
 
 	/**
 	 * @return
+	 * @throws IOException 
 	 */
-	private void createWebCrawl() {
+	private void createWebCrawl() throws IOException {
 		LanguageDirectoryMover webcrawl = new LanguageDirectoryMover();
+		webcrawl.loadProperties(languageDependentMoverProperties);
 		webcrawl.setDirectorySuffix(webcrawlDirectorySuffix);
 		webcrawl.setOutputDirectory(new File(outputDirectoryName));
+		
+		if (webcrawlInputDirectories.size() == 1) {
+			webcrawlInputDirectories = this.checkForStandardSubDirectories(new File(webcrawlInputDirectories.get(0)));
+		}
 		
 		for (String directory : webcrawlInputDirectories) {
 			webcrawl.addInputDirectory(new File(directory));
@@ -224,12 +242,43 @@ public class WortschatzResourceStart {
 	}
 
 	/**
-	 * @return
+	 * @param baseDirectory
 	 */
-	private void createFindlinks() {
+	private List<String> checkForStandardSubDirectories(File baseDirectory) {
+		
+		List<String> result = new ArrayList<String>();
+		
+		this.checkDirectory(result, new File(baseDirectory,"Stopwort"));
+		this.checkDirectory(result, new File(baseDirectory,"Unigramm"));
+		this.checkDirectory(result, new File(baseDirectory,"Trigramm"));
+		
+		return result;
+		
+	}
+
+	/**
+	 * @param result
+	 * @param file
+	 */
+	private void checkDirectory(List<String> result, File file) {
+		if (file.exists()) {
+			result.add(file.getAbsolutePath());
+		}
+	}
+
+	/**
+	 * @return
+	 * @throws IOException 
+	 */
+	private void createFindlinks() throws IOException {
 		LanguageDirectoryMover findLinks = new LanguageDirectoryMover();
+		findLinks.loadProperties(languageDependentMoverProperties);
 		findLinks.setDirectorySuffix(findlinksDirectorySuffix);
 		findLinks.setOutputDirectory(new File(outputDirectoryName));
+		
+		if (findLinksInputDirectories.size() == 1) {
+			findLinksInputDirectories = this.checkForStandardSubDirectories(new File(findLinksInputDirectories.get(0)));
+		}
 		
 		for (String directory : findLinksInputDirectories) {
 			findLinks.addInputDirectory(new File(directory));
