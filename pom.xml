@@ -3,18 +3,20 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>FindLinksWebCrawlerSearch</groupId>
 	<artifactId>FindLinksWebCrawlerSearch</artifactId>
-	<version>0.0.1</version>
+	<version>0.02-SNAPSHOT</version>
 
 	<dependencies>
 		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.16</version>
+			<groupId>com.martiansoftware</groupId>
+			<artifactId>jsap</artifactId>
+			<version>2.1</version>
 		</dependency>
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.8.2</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>commons-lang</groupId>
@@ -26,12 +28,32 @@
 			<artifactId>plexus-utils</artifactId>
 			<version>1.1</version>
 		</dependency>
+		<dependency>
+			<groupId>com.google.collections</groupId>
+			<artifactId>google-collections</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>de.uni_leipzig.asv</groupId>
+			<artifactId>clarin.common</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-	
+
 	<build>
 		<plugins>
 			<plugin>

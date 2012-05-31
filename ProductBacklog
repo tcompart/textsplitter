@@ -30,3 +30,6 @@ Priotität	Nr	Beschreibung			Aufwand	Erledigt?
 Sehr hoch	1	Kopiervorgang vonFL/CR	100		ja
 Hoch		2	Korrektur von fehlerhaften
 				Sprachbezeichnern		20		ja
+Hoch		3	Source-Splitting		10		ja
+Sehr Hoch	4	Domain-Splitting		20		nein
+Mittel		5	Refactoring OOP			100		nein
