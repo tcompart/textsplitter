@@ -14,7 +14,6 @@ import org.junit.Test;
 
 import com.google.common.base.Predicate;
 
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Filter;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReachedEndException;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.SelectorPool;
 

@@ -8,18 +8,32 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author <a href="mail:grigull@informatik.uni-leipzig.de">Torsten Grigull</a>
  *
  */
 public class IOUtil {
 	
+	private static final Logger log = LoggerFactory.getLogger(IOUtil.class);
+	
 	private static final int BUFFER_SIZE = 4096;
 
-	public static File createDirectory(String directory) {
-		File dir = new File(directory);
-		dir.mkdirs();
-		return dir;
+	private static final Integer maximumTries = 5;
+	
+	public static boolean createDirectory(File directory) {
+		int currentNumberOfTries = 0;
+		while (!directory.exists()) {
+			if (!directory.mkdirs() && maximumTries > currentNumberOfTries) {
+				currentNumberOfTries++;
+				log.debug(String.format("Directory '%s' not created yet!", directory));
+			} else if (maximumTries <= currentNumberOfTries) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 
@@ -33,22 +47,18 @@ public class IOUtil {
 	}	
 	
 	public static boolean removeDirectory(File directory) {
-		if (directory.isDirectory()) {
-			boolean flag = true;
+		boolean flag = true;
+		if (directory.exists() && directory.isDirectory()) {
 			for (File file : directory.listFiles()) {
 				if (file.isDirectory()) {
-					if (!removeDirectory(file)) {
-						flag = false;
-						continue;
-					} 
-				} 
-				if (!removeFile(file)) {
-					flag = false;
+					flag = removeDirectory(file) & flag;
+				} else {
+					flag = removeFile(file) & flag;
 				}
 			}
-			return flag;
+			flag = directory.delete() & flag;
 		}
-		return false;
+		return flag;
 	}
 	
 	public static boolean removeFile(File file) {

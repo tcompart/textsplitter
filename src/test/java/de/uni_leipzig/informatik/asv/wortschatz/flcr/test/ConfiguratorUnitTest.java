@@ -23,6 +23,8 @@ public class ConfiguratorUnitTest {
 	public static final String PROPERTY_FILE_BASE_DIRECTORY = "/temporaryDirectory";
 
 	private static final Integer PROPERTY_FILE_YEAR = 2013;
+
+	private static final String PROPERTY_BASE_FILE_EXTENSION = "txt";
 	
 	@BeforeClass
 	public static void setUpPropertyFile() throws IOException {
@@ -35,6 +37,8 @@ public class ConfiguratorUnitTest {
 			writer.write(String.format("%s=%s", Configurator.PROPERTY_BASE_OUTPUT, PROPERTY_FILE_BASE_DIRECTORY));
 			writer.newLine();
 			writer.write(String.format("%s=%d", Configurator.PROPERTY_YEAR, PROPERTY_FILE_YEAR));
+			writer.newLine();
+			writer.write(String.format("%s=%s", Configurator.PROPERTY_BASE_FILE_EXTENSION, PROPERTY_BASE_FILE_EXTENSION));
 			writer.newLine();
 		} finally {
 			if (writer != null) {
@@ -63,6 +67,8 @@ public class ConfiguratorUnitTest {
 		Configurator configuration = Configurator.getConfiguration();
 		assertThat(configuration, notNullValue());
 		assertThat(configuration.getBaseOutputDirectory(), is(Configurator.DEFAULT_BASE_OUTPUT_DIRECTORY));
+		assertThat(configuration.getDefaultFileExtension(), is(".txt"));
+		
 		
 		assertThat(configuration.includeYear(), is(true));
 		assertThat(configuration.getYear(), is(Configurator.DEFAULT_YEAR));
@@ -107,7 +113,7 @@ public class ConfiguratorUnitTest {
 		assertThat(configurator.includeYear(), is(true));
 		assertThat(configurator.getYear(), is(PROPERTY_FILE_YEAR));
 		assertThat(configurator.getBaseOutputDirectory(), is(PROPERTY_FILE_BASE_DIRECTORY));
-		
+		assertThat(configurator.getDefaultFileExtension(), is(PROPERTY_BASE_FILE_EXTENSION));
 	}
 	
 }

@@ -8,12 +8,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_leipzig.asv.clarin.common.tuple.Maybe;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile.SourceNumberFinder;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReachedEndException;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.SelectorPool;
 
@@ -193,6 +189,29 @@ public class Textfile {
 		this.sourcePool.release(source);
 	}
 
+	@Override
+	public String toString() {
+		
+		StringBuffer sb = new StringBuffer();
+		
+		sb.append(this.getTextfileName());
+		sb.append(" {name: '");
+		sb.append(this.getTextfileName());
+		sb.append("', language: '");
+		sb.append(this.getLanguage());
+		if (this.getOutputType() != null) {
+			sb.append("', type: '");
+			sb.append(this.getOutputType().getOutputName());
+		}
+		sb.append("', year: '");
+		sb.append(this.getYear());
+		sb.append("', number of sources: '");
+		sb.append(this.getNumberOfSources());
+		sb.append("'}");
+		return sb.toString();
+		
+	}
+	
 	public void release() {
 		this.sourcePool = null;
 		this.textFileType = null;

@@ -18,11 +18,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.EventListener;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.IOUtil;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.EventListener.Event;
 import de.unileipzig.asv.wortschatz.flcr.WortschatzResourceStart;
 import de.unileipzig.asv.wortschatz.flcr.exception.ExitException;
-import de.unileipzig.asv.wortschatz.flcr.listener.EventListener;
-import de.unileipzig.asv.wortschatz.flcr.listener.EventListener.Event;
-import de.unileipzig.asv.wortschatz.flcr.util.IOUtil;
 
 /**
  * @author <a href="mail:grigull@informatik.uni-leipzig.de">Torsten Grigull</a>

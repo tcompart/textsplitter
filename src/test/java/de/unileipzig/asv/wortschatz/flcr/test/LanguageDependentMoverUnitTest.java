@@ -23,8 +23,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.IOUtil;
 import de.unileipzig.asv.wortschatz.flcr.LanguageDependentMover;
-import de.unileipzig.asv.wortschatz.flcr.util.IOUtil;
 
 /**
  * @author <a href="mail:grigull@informatik.uni-leipzig.de">Torsten Grigull</a>

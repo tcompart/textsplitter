@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReachedEndException;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.SelectorPool;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.impl.EventInfo;
 
 public abstract class Producer<Input, Output> extends BasicListenerClass implements Runnable {
 

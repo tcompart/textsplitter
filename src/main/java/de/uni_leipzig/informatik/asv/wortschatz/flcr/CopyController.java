@@ -14,7 +14,6 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,7 +21,6 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_leipzig.asv.clarin.common.tuple.Maybe;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.task.Check;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.task.CheckFailedException;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.task.Command;
@@ -32,6 +30,7 @@ import de.uni_leipzig.informatik.asv.wortschatz.flcr.task.Task;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Source;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextfilePool;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Configurator;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.InstanceNamePatternFactory;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.MappingFactory;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReachedEndException;
@@ -56,10 +55,22 @@ public class CopyController implements Runnable {
 
 	private final String instance_name;
 
+	private final Configurator configuration;
+
 	public CopyController() {
-		this.instance_name = InstanceNamePatternFactory.getInstanceName(getClass());
+		this(Configurator.getConfiguration());
 	}
 
+	public CopyController(final Configurator configurator) {
+		
+		if (configurator == null) {
+			throw new NullPointerException();
+		}
+		
+		this.instance_name = InstanceNamePatternFactory.getInstanceName(getClass());
+		this.configuration = configurator;
+	}
+	
 	public void start(final Collection<File> inputFiles) {
 
 		if (inputFiles == null) { throw new NullPointerException(); }
@@ -69,8 +80,9 @@ public class CopyController implements Runnable {
 		loadFiles(inputFiles, foundFilesWithPattern, fileNamePattern);
 		this.setTextilePool(new TextfilePool(foundFilesWithPattern));
 		this.setExecutor(Executors.newFixedThreadPool(3));
-		this.setMappingFactory(new MappingFactory());
 
+		this.mappingFactory = this.getMappingFactory();
+		
 		assert this.textfilePool != null;
 		assert this.executor != null;
 		assert this.mappingFactory != null;
@@ -91,11 +103,17 @@ public class CopyController implements Runnable {
 		this.textfilePool = inputTextfilePool;
 	}
 
-	protected void setMappingFactory(MappingFactory inputMappingFactory) {
+	public void setMappingFactory(MappingFactory inputMappingFactory) {
 		if (inputMappingFactory == null) { throw new NullPointerException(); }
 		this.mappingFactory = inputMappingFactory;
 	}
 
+	public MappingFactory getMappingFactory() {
+		if (this.mappingFactory == null)
+			this.mappingFactory = new MappingFactory(this.configuration);
+		return this.mappingFactory;
+	}
+	
 	protected void setExecutor(ExecutorService inputExecutor) {
 		if (inputExecutor == null) { throw new NullPointerException(); }
 		this.executor = inputExecutor;
@@ -120,7 +138,7 @@ public class CopyController implements Runnable {
 
 			final BlockingQueue<Set<Task>> queue = new SynchronousQueue<Set<Task>>();
 			final SelectorPool<Textfile> pool = this.textfilePool;
-			final MappingFactory localMappingFactory = this.mappingFactory;
+			final MappingFactory localMappingFactory = this.getMappingFactory();
 
 			final int numberOfCores = Runtime.getRuntime().availableProcessors();
 
@@ -160,11 +178,6 @@ public class CopyController implements Runnable {
 					log.debug(String.format("Number of reserved files: %d", ReserverUtil.numberOfReservedFiles()));
 				}
 
-				if (pool.finished() && queue.isEmpty() && ReserverUtil.numberOfReservedFiles() == 0) {
-					log.info("Stopping this thread, because the number of entries in the pool, the queue and number of reseved files are all 0.");
-					break;
-				}
-
 				if (this.isStoped()) {
 					log.debug(String.format("Reached possible point of break for class '%s'. Stopping this thread now.", CopyController.class.getSimpleName()));
 					break;
@@ -178,11 +191,18 @@ public class CopyController implements Runnable {
 				 * executed, not matter what!!!
 				 */
 				try {
-					Thread.sleep(1000);
+					synchronized (this) {
+						this.wait(2500);
+					}
 				} catch (InterruptedException ex) {
 					// kindly ignore this exception, because it just does not
 					// matter how long this thread will sleep. However, it
 					// should find an end
+				}
+
+				if (pool.finished() && queue.isEmpty() && ReserverUtil.numberOfReservedFiles() == 0) {
+					log.info("Stopping this thread, because the number of entries in the pool, the queue and number of reseved files are all 0.");
+					break;
 				}
 			}
 
@@ -303,8 +323,6 @@ public class CopyController implements Runnable {
 
 		private final String instance_name;
 
-		private boolean producedAlready = false;
-
 		public TaskProducer(final BlockingQueue<Set<Task>> inputQueue, final SelectorPool<Textfile> inputPool,
 				MappingFactory inputFactory) {
 			super(inputQueue, inputPool);
@@ -410,39 +428,52 @@ public class CopyController implements Runnable {
 				try {
 					temporaryFile = ReserverUtil.reserve(this.file).getValue();
 				} catch (InterruptedException ex) {
-					ex.printStackTrace();
+					if (log.isDebugEnabled()) {
+						log.debug("%d: reservation of output file '%s' was interrupted. Trying again.", 1, (temporaryFile != null ? temporaryFile.getName() : "not yet known!"));
+					}
 				}
 			}
 			
 			final File outputfile = temporaryFile;
 			
-			if (log.isDebugEnabled())
+			if (log.isDebugEnabled()) {
 				log.debug(String.format("%d: reserved output file '%s'", 1, outputfile.getName()));
-
-			CopyCommand.createOutputDirectories(outputfile);
+			}
 			
-			if (log.isDebugEnabled())
+			if (CopyCommand.createOutputDirectories(outputfile)) {
+				if (log.isDebugEnabled()) {
 				log.debug(String.format("%d: created output directories '%s'", 2, outputfile.getParentFile().getAbsolutePath()));
-
-			if (log.isDebugEnabled())
-				log.debug(String.format("%d: executing copy command.", 3));
-
-			try {
-				if (CopyCommand.copy(this.source, outputfile)) {
-					if (log.isDebugEnabled())
-						log.debug(String.format("%d: finished copying.", 4));
-					
-					ReserverUtil.release(this.file);
-					
-					if (log.isDebugEnabled())
-						log.debug(String.format("%d: released output file '%s'", 5, outputfile.getName()));
 				}
+			} else {
+				log.warn("%d: creating of output directories '%s' failed.", 2, outputfile.getParentFile().getAbsolutePath());
+			}
+
+			
+			if (log.isDebugEnabled()) {
+				log.debug(String.format("%d: executing copy command.", 3));
+			}
+			
+			try {
+				long preCopyLength = outputfile.length();
+				if (CopyCommand.copy(this.source, outputfile)) {
+					long afterCopyLength = outputfile.length();
+					if (log.isDebugEnabled()) { log.debug(String.format("%d: finished copying. Copied %d bytes to file '%s'", 4, afterCopyLength-preCopyLength, outputfile.getAbsolutePath())); }
+				} else {
+					log.error(String.format("%d: COPYING FAILED! FILE '%s' MAY BE CORRUPTED NOW.", 4, outputfile.getAbsolutePath()));
+				}
+				
 			} catch (IOException ex) {
 				// the only solution would be: deletion of outputfile, repeating
 				// of all writing (every source, which was already written +
 				// this.source) other solution: keep an backup, if this fails, re-use the
 				// backup, and re-try writing source
 				throw new CommandExecutionException(String.format("This means a serious error. Some content was probably already written. Some was not. Corrupted file: '%s'", outputfile.getName()), ex);
+			} finally {
+				ReserverUtil.release(this.file);
+				
+				if (log.isDebugEnabled())
+					log.debug(String.format("%d: released output file '%s'", 5, outputfile.getName()));
+				
 			}
 		}
 

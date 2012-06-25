@@ -24,7 +24,7 @@ public class SelectorPoolIntegrationTest extends SelectorPoolUnitTest {
 	}
 	
 	
-	@Test(timeout=2000)
+	@Test(timeout=20000)
 	public void stressHeapTest() {
 
 		SelectorPool<Object> selectorPool = new DefaultTestSelectorPool() {

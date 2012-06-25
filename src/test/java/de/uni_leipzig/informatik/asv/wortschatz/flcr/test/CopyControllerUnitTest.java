@@ -5,27 +5,21 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashSet;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.CopyController;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Source;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextfileType;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Configurator;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.IOUtil;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.MappingFactory;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReachedEndException;
 
 public class CopyControllerUnitTest {
 
@@ -34,7 +28,6 @@ public class CopyControllerUnitTest {
 	protected static final MappingFactory factory = new MappingFactory(Configurator.getConfiguration());
 
 	protected CopyController controller;
-	private int numberOfSources;
 
 	@BeforeClass
 	public static void setUpClass() throws IOException {
@@ -48,20 +41,35 @@ public class CopyControllerUnitTest {
 
 	@Before
 	public void setUp() throws IOException {
-		IOUtil.removeDirectory(factory.getDefaultOutputDirectory(TextfileType.Findlinks));
-		IOUtil.removeDirectory(factory.getDefaultOutputDirectory(TextfileType.Webcrawl));
+		final File findLinksDirectory = factory.getDefaultOutputDirectory(TextfileType.Findlinks);
+		final File webcrawlDirectory = factory.getDefaultOutputDirectory(TextfileType.Webcrawl);
+		
+		assertThat(IOUtil.removeDirectory(findLinksDirectory), is(true));
+		assertThat(IOUtil.removeDirectory(webcrawlDirectory), is(true));
 
-		controller = new CopyController();
-
-		numberOfSources = new Textfile(textfileFile).getNumberOfSources();
+		assertThat(IOUtil.createDirectory(findLinksDirectory), is(true));
+		assertThat(IOUtil.createDirectory(webcrawlDirectory), is(true));
+		
+		assertThat(findLinksDirectory.exists(), is(true));
+		assertThat(findLinksDirectory.isDirectory(), is(true));
+		assertThat(webcrawlDirectory.exists(), is(true));
+		assertThat(webcrawlDirectory.isDirectory(), is(true));
+		
+		controller = new CopyController(new Configurator());
 	}
 
 	@After
 	public void tearDown() {
-		MappingFactory factory = new MappingFactory(Configurator.getConfiguration());
+		final File findLinksDirectory = factory.getDefaultOutputDirectory(TextfileType.Findlinks);
+		final File webcrawlDirectory = factory.getDefaultOutputDirectory(TextfileType.Webcrawl);
 		
-		IOUtil.removeDirectory(factory.getDefaultOutputDirectory(TextfileType.Findlinks));
-		IOUtil.removeDirectory(factory.getDefaultOutputDirectory(TextfileType.Webcrawl));
+		IOUtil.removeDirectory(findLinksDirectory);
+		IOUtil.removeDirectory(webcrawlDirectory);
+		
+		assertThat(findLinksDirectory.exists(), is(false));
+		assertThat(findLinksDirectory.isDirectory(), is(false));
+		assertThat(webcrawlDirectory.exists(), is(false));
+		assertThat(webcrawlDirectory.isDirectory(), is(false));
 	}
 
 	@Test
