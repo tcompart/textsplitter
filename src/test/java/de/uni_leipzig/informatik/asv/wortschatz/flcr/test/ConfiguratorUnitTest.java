@@ -73,8 +73,6 @@ public class ConfiguratorUnitTest {
 		assertThat(configuration.includeYear(), is(true));
 		assertThat(configuration.getYear(), is(Configurator.DEFAULT_YEAR));
 		assertThat(Configurator.DEFAULT_YEAR, not(0));
-		
-		assertThat(configuration.isGeneralLanguagePatternAllowed(), is(false));
 	}
 	
 	@Test

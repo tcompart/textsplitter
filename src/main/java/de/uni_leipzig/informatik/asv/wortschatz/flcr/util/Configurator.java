@@ -30,14 +30,12 @@ public class Configurator {
 
 	private final Integer year;
 	private final String baseOutputDirectory;
-	private final boolean generalLanguagePatternAllowed;
 	private final String baseFileExtension;
 	private final String textfileLanguageListName;
 
 	public Configurator() {
 		year = DEFAULT_YEAR;
 		baseOutputDirectory = DEFAULT_BASE_OUTPUT_DIRECTORY;
-		generalLanguagePatternAllowed = false;
 		baseFileExtension = DEFAULT_BASE_FILE_EXTENSION;
 		textfileLanguageListName = DEFAULT_LANGUAGE_LIST_NAME;
 	}
@@ -48,8 +46,6 @@ public class Configurator {
 				: DEFAULT_YEAR);
 		this.baseOutputDirectory = (properties.containsKey(PROPERTY_BASE_OUTPUT) ? properties
 				.getProperty(PROPERTY_BASE_OUTPUT) : DEFAULT_BASE_OUTPUT_DIRECTORY);
-		this.generalLanguagePatternAllowed = Boolean.parseBoolean(properties
-				.getProperty(PROPERTY_BASE_LANGUAGE_ALLOWED));
 		this.baseFileExtension = (properties.containsKey(PROPERTY_BASE_FILE_EXTENSION) ? properties
 				.getProperty(PROPERTY_BASE_FILE_EXTENSION) : DEFAULT_BASE_FILE_EXTENSION);
 		this.textfileLanguageListName = (properties.containsKey(PROPERTY_LANGUAGE_LIST_NAME) ? properties
@@ -85,9 +81,6 @@ public class Configurator {
 		} catch (EntryNotFoundException e) {
 			// ignore -> catched
 		}
-		// results almost all times to 'false', because only 'true' (ignore case
-		// is allowed)
-		this.generalLanguagePatternAllowed = Boolean.parseBoolean(temporaryBaseLanguageAllowedProperty);
 
 		String temporaryBaseOutputFileExtension = null;
 		try {
@@ -112,7 +105,6 @@ public class Configurator {
 	public Configurator(Configurator inputConfigurator) {
 		this.year = inputConfigurator.getYear();
 		this.baseOutputDirectory = inputConfigurator.getBaseOutputDirectory();
-		this.generalLanguagePatternAllowed = inputConfigurator.isGeneralLanguagePatternAllowed();
 		this.baseFileExtension = inputConfigurator.getDefaultFileExtension();
 		this.textfileLanguageListName = inputConfigurator.getTextfileLanguageListFileName();
 	}
@@ -140,10 +132,6 @@ public class Configurator {
 		return this.baseOutputDirectory;
 	}
 
-	public boolean isGeneralLanguagePatternAllowed() {
-		return this.generalLanguagePatternAllowed;
-	}
-
 	@Override
 	public boolean equals(Object that) {
 
@@ -153,8 +141,7 @@ public class Configurator {
 
 		Configurator obj = (Configurator) that;
 
-		return this.generalLanguagePatternAllowed == obj.generalLanguagePatternAllowed
-				&& this.baseOutputDirectory.equals(obj.baseOutputDirectory) && this.year.equals(obj.year);
+		return this.baseOutputDirectory.equals(obj.baseOutputDirectory) && this.year.equals(obj.year);
 	}
 
 	@Override
@@ -167,9 +154,6 @@ public class Configurator {
 		hashCode += hashCode * multiPrim + this.getBaseOutputDirectory().hashCode();
 		if (this.includeYear()) {
 			hashCode += hashCode * multiPrim + 2;
-		}
-		if (this.isGeneralLanguagePatternAllowed()) {
-			hashCode += hashCode * multiPrim + 3;
 		}
 		hashCode += hashCode * multiPrim + this.getDefaultFileExtension().hashCode();
 		hashCode += hashCode * multiPrim + this.getTextfileLanguageListFileName().hashCode();
