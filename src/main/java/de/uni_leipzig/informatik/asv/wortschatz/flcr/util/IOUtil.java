@@ -7,6 +7,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +66,21 @@ public class IOUtil {
 	
 	public static boolean removeFile(File file) {
 		return (file != null && file.delete());
+	}
+	
+	public static Collection<File> getFiles(final File inputDirectory, final boolean recursive) {
+		final Collection<File> resultSet = new HashSet<File>();
+		
+		if (inputDirectory.isDirectory()) {
+			for (File innerFile : inputDirectory.listFiles()) {
+				if (innerFile.isFile() || (innerFile.isDirectory() && recursive))
+					resultSet.addAll(getFiles(innerFile, recursive));
+			}
+		} else if (inputDirectory.isFile()) {
+			resultSet.add(inputDirectory);
+		}
+		
+		return Collections.unmodifiableCollection(resultSet);
 	}
 	
 	/**
