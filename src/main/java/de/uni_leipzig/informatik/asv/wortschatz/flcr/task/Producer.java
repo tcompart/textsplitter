@@ -26,13 +26,20 @@ public abstract class Producer<Input, Output> extends BasicListenerClass impleme
 
 	private volatile boolean reachedEnd = false;
 
+	private final BlockingQueue<Boolean> result;
+
 	public Producer(final BlockingQueue<Output> inputQueue, final SelectorPool<Input> inputPool) {
+		this(inputQueue, inputPool, null);
+	}
+		
+	public Producer(final BlockingQueue<Output> inputQueue, final SelectorPool<Input> inputPool, final BlockingQueue<Boolean> resultQueue) {
 		
 		if (inputPool == null || inputQueue == null) { throw new NullPointerException(); }		
 		
 		this.queue = inputQueue;
 		this.pool = inputPool;
-
+		this.result = resultQueue;
+		
 		final StringBuffer sb = new StringBuffer();
 		sb.append(this.getClass().getSimpleName());
 		sb.append("[");
@@ -76,13 +83,21 @@ public abstract class Producer<Input, Output> extends BasicListenerClass impleme
 										.getClass().getSimpleName(), this.currentIn));
 
 					out = this.produce(in);
-
+					
 					this.addToQueue(out);
 
 					this.currentOut++;
 
 					this.releaseFromPool(in);
 
+					if (this.result != null) {
+						if (currentIn == currentOut) {
+							this.result.offer(true);
+						} else {
+							this.result.offer(false);
+						}
+					}
+					
 					if (log.isDebugEnabled())
 						log.debug(String.format(
 								"[%s, nr: %d]: Produced an object of class '%s' from input object '%s' (nr: %d).", this
@@ -122,7 +137,10 @@ public abstract class Producer<Input, Output> extends BasicListenerClass impleme
 			ex.printStackTrace();
 		} finally {
 			// this may fail, because the objects is taken before this point of code can be reached
-			assert this.getQueue().contains(output);			
+			// and it makes no sense to synchronize this whole block of code!!!!
+			// otherwise no queue is needed, and we can synchronize the offer and request of elements
+			// by hand manually...
+			assert this.getQueue().contains(output);
 		}
 	}
 

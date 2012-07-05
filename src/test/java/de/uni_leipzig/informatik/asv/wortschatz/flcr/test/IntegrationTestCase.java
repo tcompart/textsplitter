@@ -129,7 +129,7 @@ public class IntegrationTestCase {
 		private final String instance_name;
 
 		public StringConsumer(final BlockingQueue<String> inputQueue, final Check<String> inputCheck) {
-			super(inputQueue, inputCheck);
+			super(inputQueue, inputCheck, null);
 			this.instance_name = String.format("%s_%d", "consumer", counter.incrementAndGet());
 		}
 

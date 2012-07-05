@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,6 +54,8 @@ public class CopyController implements Runnable {
 
 	private MappingFactory mappingFactory;
 
+	private BlockingQueue<Boolean> resultQueue;
+
 	private final String instance_name;
 
 	private final Configurator configuration;
@@ -82,6 +85,7 @@ public class CopyController implements Runnable {
 		this.setExecutor(Executors.newFixedThreadPool(3));
 
 		this.mappingFactory = this.getMappingFactory();
+		this.resultQueue = new LinkedBlockingQueue<Boolean>();
 		
 		assert this.textfilePool != null;
 		assert this.executor != null;
@@ -152,10 +156,10 @@ public class CopyController implements Runnable {
 			
 			// with the producer consumer principle, at least one			
 			// producer/consumer should exist
-			for (int i = 0; i < 4; i++) {
+			for (int i = 0; i < numberOfCores; i++) {
 				// first create an producer
 				log.debug(String.format("[%s]: adding new instance of class %s to the executor.", this.instance_name,TaskProducer.class.getSimpleName()));
-				this.getExecutor().execute(new TaskProducer(queue, pool, localMappingFactory));
+				this.getExecutor().execute(new TaskProducer(queue, pool, localMappingFactory, this.resultQueue));
 				try {
 					Thread.sleep(100);
 				} catch (InterruptedException ex) {
@@ -163,7 +167,7 @@ public class CopyController implements Runnable {
 				}
 				// second create an consumer
 				log.debug(String.format("[%s]: adding new instance of class %s to the executor.", this.instance_name,TaskConsumer.class.getSimpleName()));
-				this.getExecutor().execute(new TaskConsumer(queue, new TaskCheck()));
+				this.getExecutor().execute(new TaskConsumer(queue, new TaskCheck(), this.resultQueue));
 			}
 			/*
 			 * after this thread has to exist further, but should check
@@ -249,12 +253,9 @@ public class CopyController implements Runnable {
 		return this.stop;
 	}
 
-	public static void main(String[] args) {
-		// TODO load files from main input stream
-		Collection<File> inputFileList = null;
-		CopyController controller = new CopyController();
-		controller.start(inputFileList);
-
+	public boolean isSuccessful() {
+		// this means, the instance can be still running... and is still successful.
+		return this.resultQueue != null && !this.resultQueue.isEmpty() && !this.resultQueue.contains(false);
 	}
 
 	public static void loadFiles(final Collection<File> inputFiles, final Collection<File> files,
@@ -324,8 +325,8 @@ public class CopyController implements Runnable {
 		private final String instance_name;
 
 		public TaskProducer(final BlockingQueue<Set<Task>> inputQueue, final SelectorPool<Textfile> inputPool,
-				MappingFactory inputFactory) {
-			super(inputQueue, inputPool);
+				MappingFactory inputFactory, final BlockingQueue<Boolean> resultQueue) {
+			super(inputQueue, inputPool, resultQueue);
 			this.taskProducerMappingFactory = inputFactory;
 			this.instance_name = InstanceNamePatternFactory.getInstanceName(getClass());
 			log.info(String.format(
@@ -361,21 +362,21 @@ public class CopyController implements Runnable {
 
 		private final String instance_name;
 
-		public TaskConsumer(final BlockingQueue<Set<Task>> inputQueue) {
-			this(inputQueue, null);
+		public TaskConsumer(final BlockingQueue<Set<Task>> inputQueue, final BlockingQueue<Boolean> inputResultQueue) {
+			this(inputQueue, null, inputResultQueue);
 		}
 
-		public TaskConsumer(final BlockingQueue<Set<Task>> inputQueue, final Check<Set<Task>> inputCheck) {
-			super(inputQueue, inputCheck);
+		public TaskConsumer(final BlockingQueue<Set<Task>> inputQueue, final Check<Set<Task>> inputCheck, final BlockingQueue<Boolean> inputResultQueue) {
+			super(inputQueue, inputCheck, inputResultQueue);
 			this.instance_name = InstanceNamePatternFactory.getInstanceName(getClass());
-			log.info(String.format("Starting new instance of class '%s': %s", TaskConsumer.class.getSimpleName(), this.instance_name));
+			log.info("Starting new instance of class {}: '{}'", TaskConsumer.class.getSimpleName(), this.instance_name);
 		}
 
 		@Override
 		public void consume(final Set<Task> inputSet) throws InterruptedException {
 			for (Task task : inputSet) {
 				if (log.isInfoEnabled()) {
-					log.info(String.format("[%s]: Consuming next task '%s'", this.instance_name, task.getUniqueIdentifier()));
+					log.info("[{}]: Consuming next task '{}'", this.instance_name, task.getUniqueIdentifier());
 				}
 				task.doTask();
 			}
@@ -390,9 +391,9 @@ public class CopyController implements Runnable {
 			
 			if (log.isInfoEnabled()) {
 				if (inputTask != null && !inputTask.finished()) {
-					log.info(String.format("Assigned task '%s' not finished yet.", inputTask.getUniqueIdentifier()));
+					log.info("Assigned task '{}' not finished yet.", inputTask.getUniqueIdentifier());
 				} else if (inputTask != null && inputTask.successful()) {
-					log.info(String.format("Assigned task '%s' finished successfully.", inputTask.getUniqueIdentifier()));
+					log.info("Assigned task '{}' finished successfully.", inputTask.getUniqueIdentifier());
 				}
 			}
 			
@@ -429,7 +430,7 @@ public class CopyController implements Runnable {
 					temporaryFile = ReserverUtil.reserve(this.file).getValue();
 				} catch (InterruptedException ex) {
 					if (log.isDebugEnabled()) {
-						log.debug("%d: reservation of output file '%s' was interrupted. Trying again.", 1, (temporaryFile != null ? temporaryFile.getName() : "not yet known!"));
+						log.debug("{}: reservation of output file '{}' was interrupted. Trying again.", 1, (temporaryFile != null ? temporaryFile.getName() : "not yet known!"));
 					}
 				}
 			}
@@ -437,12 +438,12 @@ public class CopyController implements Runnable {
 			final File outputfile = temporaryFile;
 			
 			if (log.isDebugEnabled()) {
-				log.debug(String.format("%d: reserved output file '%s'", 1, outputfile.getName()));
+				log.debug("{}: reserved output file '{}'", 1, outputfile.getName());
 			}
 			
 			if (CopyCommand.createOutputDirectories(outputfile)) {
 				if (log.isDebugEnabled()) {
-				log.debug(String.format("%d: created output directories '%s'", 2, outputfile.getParentFile().getAbsolutePath()));
+				log.debug("{}: created output directories '{}'", 2, outputfile.getParentFile().getAbsolutePath());
 				}
 			} else {
 				log.warn("%d: creating of output directories '%s' failed.", 2, outputfile.getParentFile().getAbsolutePath());
@@ -450,23 +451,24 @@ public class CopyController implements Runnable {
 
 			
 			if (log.isDebugEnabled()) {
-				log.debug(String.format("%d: executing copy command.", 3));
+				log.debug("{}: executing copy command.", 3);
 			}
 			
 			try {
 				long preCopyLength = outputfile.length();
 				if (CopyCommand.copy(this.source, outputfile)) {
-					long afterCopyLength = outputfile.length();
-					if (log.isDebugEnabled()) { log.debug(String.format("%d: finished copying. Copied %d bytes to file '%s'", 4, afterCopyLength-preCopyLength, outputfile.getAbsolutePath())); }
+					final long afterCopyLength = outputfile.length();
+					final Long byteDiffLength = afterCopyLength-preCopyLength;
+					log.debug("{}: finished copying. Copied {} bytes to file '{}'", new Object[]{ 4, byteDiffLength, outputfile.getAbsolutePath()});
 				} else {
-					log.error(String.format("%d: COPYING FAILED! FILE '%s' MAY BE CORRUPTED NOW.", 4, outputfile.getAbsolutePath()));
+					throw new CommandExecutionException(String.format("%d: COPYING FAILED! FILE '%s' MAY BE CORRUPTED NOW.", 4, outputfile.getAbsolutePath()));
 				}
-				
 			} catch (IOException ex) {
 				// the only solution would be: deletion of outputfile, repeating
 				// of all writing (every source, which was already written +
 				// this.source) other solution: keep an backup, if this fails, re-use the
 				// backup, and re-try writing source
+				log.error("While executing {} {} an exception occurred. Please check the stack trace for more details.",new Object[]{Command.class.getSimpleName(), CopyCommand.class.getSimpleName()}, ex);
 				throw new CommandExecutionException(String.format("This means a serious error. Some content was probably already written. Some was not. Corrupted file: '%s'", outputfile.getName()), ex);
 			} finally {
 				ReserverUtil.release(this.file);

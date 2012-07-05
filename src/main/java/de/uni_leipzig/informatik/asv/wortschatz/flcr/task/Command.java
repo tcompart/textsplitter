@@ -16,6 +16,10 @@ public interface Command {
 			super(inputMessage, inputEx);
 		}
 
+		public CommandExecutionException(final String inputMessage) {
+			super(inputMessage);
+		}
+
 		private static final long serialVersionUID = 1L;
 	}
 
