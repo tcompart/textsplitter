@@ -4,9 +4,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ThreadInterruptingTest {
 
+	private static final Logger log = LoggerFactory.getLogger(ThreadInterruptingTest.class);
+	
 	@Test
 	public void test() throws InterruptedException {
 		ExecutorService executor = Executors.newFixedThreadPool(1);
@@ -17,8 +21,8 @@ public class ThreadInterruptingTest {
 
 		executor.shutdownNow();
 
-		System.out.println("Finished.");
-
+		log.info("Finished executor service by shutting it down.");
+		
 		Thread.sleep(100);
 	}
 
@@ -29,7 +33,7 @@ public class ThreadInterruptingTest {
 		@Override
 		public void run() {
 			while (!Thread.interrupted()) {
-				System.out.println(String.format("---TEST---%d----", this.count++));
+				log.debug("---TEST---{}----", this.count++);
 			}
 		}
 	}

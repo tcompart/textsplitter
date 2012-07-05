@@ -7,10 +7,10 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 @SuiteClasses({
 	IntegrationTestCase.class,
+	CopyControllerIntegrationTest.class,
 	SelectorPoolIntegrationTest.class,
 	TextfileIntegrationTest.class,
-	SourceInputstreamPoolIntegrationTest.class,
-	CopyControllerIntegrationTest.class
+	SourceInputstreamPoolIntegrationTest.class
 })
 public class AllIntegrationTests {
 

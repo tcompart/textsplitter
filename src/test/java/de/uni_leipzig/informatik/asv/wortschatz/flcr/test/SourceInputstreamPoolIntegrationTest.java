@@ -30,7 +30,7 @@ public class SourceInputstreamPoolIntegrationTest extends SourceInputstreamPoolU
 
 		final File file = textfileSmall;
 
-		System.out.println("Starting aquiring new sources.");
+		log.info("Starting aquiring new sources.");
 		
 		int toBeVarifiedNumberOfSources = 0;
 		
@@ -43,7 +43,7 @@ public class SourceInputstreamPoolIntegrationTest extends SourceInputstreamPoolU
 					assertValidSource(source);
 					
 					if (toBeVarifiedNumberOfSources + 1 % 10 == 0) { // + 1 has to be, because  '0 mod 10000 = 0', which would be plainly unexpected in this case
-						System.out.println(String.format("Already %d sources aquired....", toBeVarifiedNumberOfSources));
+						log.debug("Already {} sources aquired....", toBeVarifiedNumberOfSources);
 					}
 					assertThat(source.toString(), pool.currentNumber(), is(toBeVarifiedNumberOfSources+1));
 					assertThat(source.toString(), source.toString(), is(getNextSource(file,toBeVarifiedNumberOfSources))); // problem with very big files... you can use small files
@@ -51,7 +51,7 @@ public class SourceInputstreamPoolIntegrationTest extends SourceInputstreamPoolU
 					pool.release(source);
 			}
 		} catch (ReachedEndException ex) {
-			System.out.println(String.format("Finished aquiring every source; number of sources: %d", toBeVarifiedNumberOfSources));
+			log.info("Finished aquiring every source; number of sources: {}", toBeVarifiedNumberOfSources);
 			assertThat(String.format("%d <= %d", pool.currentNumber(), pool.size()), pool.finished(), is(true));
 		}
 		assertNumberOfSources(pool.size(), file);
