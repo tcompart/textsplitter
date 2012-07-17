@@ -6,20 +6,20 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-	CopyControllerUnitTest.class,
+	ComplexCopyManagerUnitTest.class,
 	ConfiguratorUnitTest.class,
-	QueueUnitTest.class,
-	ThreadExecutorTest.class,
-	ThreadInterruptingTest.class,
-	PropertyUnitTest.class,
-	TextfileLanguageFilterUnitTest.class,
-	MappingFactoryUnitTest.class,
-	TextfileParserUnitTest.class,
-	SelectorPoolUnitTest.class,
 	LocationUnitTest.class,
+	MappingFactoryUnitTest.class,
+	PropertyUnitTest.class,
+	QueueUnitTest.class,
+	SelectorPoolUnitTest.class,
+	SourceInputstreamPoolUnitTest.class,
 	SourceUnitTest.class,
+	TextfileLanguageFilterUnitTest.class,
+	TextfileParserUnitTest.class,
 	TextfileUnitTest.class,
-	SourceInputstreamPoolUnitTest.class
+	ThreadExecutorTest.class,
+	ThreadInterruptingTest.class
 })
 public class AllUnitTests {
 

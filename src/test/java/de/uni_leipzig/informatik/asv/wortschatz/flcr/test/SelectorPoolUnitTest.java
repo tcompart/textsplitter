@@ -47,16 +47,16 @@ public class SelectorPoolUnitTest {
 		assertThat(this.selectorPool.validate(null), is(false));
 		assertThat(this.selectorPool.validate(new Object()), is(true));
 
-		assertThat(this.selectorPool.finished(), is(false));
+		assertThat(this.selectorPool.isFinished(), is(false));
 
 	}
 
 	@Test
 	public void acquireObjects() {
 
-		assertThat(this.selectorPool.finished(), is(false));
+		assertThat(this.selectorPool.isFinished(), is(false));
 
-		for (int count = 0; count < maximumNumber; count++) {
+		for (int count = 0; count < maximumNumber-1; count++) {
 			try {
 				assertThat(this.selectorPool.acquire(), notNullValue());
 			} catch (ReachedEndException ex) {
@@ -64,13 +64,13 @@ public class SelectorPoolUnitTest {
 			}
 		}
 
-		assertThat(this.selectorPool.finished(), is(true));
+		assertThat(this.selectorPool.isFinished(), is(false));
 
 		try {
-			this.selectorPool.acquire();
+			assertThat(this.selectorPool.acquire(), notNullValue());
 			fail("The maximum number of objects has to be reached by now.");
 		} catch (ReachedEndException ex) {
-			// expected exception
+			assertThat(this.selectorPool.isFinished(), is(true));
 			assertThat(ex, notNullValue());
 		}
 
@@ -152,7 +152,7 @@ public class SelectorPoolUnitTest {
 
 		@Override
 		protected Object create() throws ReachedEndException {
-			if (this.counter.getAndIncrement() >= maximumNumber) { throw new ReachedEndException(); }
+			if (this.counter.incrementAndGet() >= maximumNumber) { throw new ReachedEndException(); }
 
 			assert this.counter.get() <= maximumNumber;
 

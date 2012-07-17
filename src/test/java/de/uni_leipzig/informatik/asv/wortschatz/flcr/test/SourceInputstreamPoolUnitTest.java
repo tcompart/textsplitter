@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.SourceInputstreamPool;
@@ -35,7 +36,7 @@ public class SourceInputstreamPoolUnitTest {
 
 		textfileSmall = textfileResource.getFile();
 
-		textfileResource = new ClassPathResource("Unigramm/FL_spa0000.txt");
+		textfileResource = new FileSystemResource("Unigramm/FL_spa0000.txt");
 
 		assertThat(textfileResource.exists(), is(true));
 

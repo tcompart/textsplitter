@@ -15,25 +15,18 @@ public class ReserverUtil {
 	
 	private static final BlockingQueue<File> collection = new LinkedBlockingQueue<File>(10);
 
-	public synchronized static Maybe<File> reserve(final File outputFile) throws InterruptedException {
-		log.info(String.format("Reserving file '%s'.", outputFile.getName()));
-		while (collection.contains(outputFile)) {
-			log.debug(String.format("Still reserved: file '%s'. Keep waiting.", outputFile.getName()));
-			Thread.sleep(1000);
+	public synchronized static Maybe<File> reserve(final File outputFile) {
+		log.info("Reserving file '{}'.", outputFile.getName());
+		if (!collection.contains(outputFile) && collection.offer(outputFile)) {
+			log.debug("Reserved file '{}'.", outputFile.getName());
+			return Maybe.just(outputFile);
 		}
-		collection.put(outputFile);
-		log.debug(String.format("Reserved file '%s'.", outputFile.getName()));
-		return Maybe.just(outputFile);
+		log.debug("File '{}' is still reserved.", outputFile.getName());
+		return Maybe.nothing();
 	}
 
-	public synchronized static boolean release(final File inputFile) {
-		if (collection.contains(inputFile)) {
-			log.info(String.format("Releasing file '%s'.", inputFile.getName()));
-			return collection.remove(inputFile);
-		} else if (log.isWarnEnabled()) {
-			log.warn(String.format("Unable to release file '%s', because it was not reserved!", inputFile.getName()));
-		}
-		return true;
+	public static boolean release(final File inputFile) {
+		return collection.remove(inputFile);
 	}
 
 	public synchronized static int numberOfReservedFiles() {

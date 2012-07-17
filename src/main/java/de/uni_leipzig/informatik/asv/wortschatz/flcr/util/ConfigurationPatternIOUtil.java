@@ -20,10 +20,12 @@ import de.uni_leipzig.informatik.asv.wortschatz.flcr._development.Development;
 public class ConfigurationPatternIOUtil {
 	
 	public static final String DELIMITER = " ";
+	public static final String COMMENT_SIGN = "#";
 
 	public static final Pattern pattern = Pattern.compile("([a-z0-9_]+)\\.([a-z]+)");
 
 	private static final Logger log = LoggerFactory.getLogger(ConfigurationPatternIOUtil.class);
+
 	
 	
 	public static Map<String, Set<String>> convert(File textfile) throws FileNotFoundException, IOException {
@@ -41,6 +43,10 @@ public class ConfigurationPatternIOUtil {
 				for (String splitted : line.split(DELIMITER)) {
 					final String trimmedString = splitted.trim();
 					
+					if (trimmedString.isEmpty()) {
+						continue;
+					}
+					
 					if (Development.assertionsEvaluated) {
 						assert trimmedString != null;
 						assert !trimmedString.isEmpty();
@@ -48,7 +54,12 @@ public class ConfigurationPatternIOUtil {
 					
 					Matcher matcher = pattern.matcher(trimmedString);
 					
-					if (matcher.matches()) {
+					if (trimmedString.startsWith(COMMENT_SIGN)) {
+						log.info("Ignoring string '{}', because it starts with the comment sign {}", trimmedString, COMMENT_SIGN);
+						continue;
+					}
+					
+					if (!trimmedString.isEmpty() && matcher.matches()) {
 						String language = matcher.group(1);
 						String domain = matcher.group(2);
 
@@ -57,9 +68,7 @@ public class ConfigurationPatternIOUtil {
 						}
 						
 						result.get(language).add(domain);
-						if (log.isDebugEnabled()) {
-							log.debug(String.format("Language '%s' was linked with domain '%s'. Therefore the assigned language with domain will be filtered (previous entry was '%s').", language, domain, trimmedString));
-						}
+						log.debug("Language '{}' was linked with domain '{}'. Therefore the assigned language with domain will be filtered (previous entry was '{}').", new Object[]{language, domain, trimmedString});
 
 						if (Development.assertionsEvaluated) {
 							assert language != null;
@@ -68,8 +77,8 @@ public class ConfigurationPatternIOUtil {
 							assert !domain.isEmpty();
 						}
 						
-					} else if (log.isWarnEnabled()) {
-						log.warn(String.format("String '%s' did not match the pattern '%s'. If this wrong. Please change the content of the property file, or fix the implementation.", trimmedString, pattern.toString()));
+					} else if (!trimmedString.isEmpty()) {
+						log.warn("String '{}' did not match the pattern '{}'. If this is not expected, please change the content of the property file, or fix the implementation.", trimmedString, pattern.toString());
 					}
 				}
 			}

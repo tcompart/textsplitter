@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashSet;
 
@@ -15,19 +16,19 @@ import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.CopyController;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.ComplexCopyManager;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextfileType;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Configurator;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.IOUtil;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.MappingFactory;
 
-public class CopyControllerUnitTest {
+public class ComplexCopyManagerUnitTest {
 
 	protected static File textfileFile;
 
 	protected static final MappingFactory factory = new MappingFactory(Configurator.getConfiguration());
 
-	protected CopyController controller;
+	protected ComplexCopyManager controller;
 
 	@BeforeClass
 	public static void setUpClass() throws IOException {
@@ -55,7 +56,7 @@ public class CopyControllerUnitTest {
 		assertThat(webcrawlDirectory.exists(), is(true));
 		assertThat(webcrawlDirectory.isDirectory(), is(true));
 		
-		controller = new CopyController(new Configurator());
+		controller = new ComplexCopyManager(textfileFile.getParentFile(), new Configurator());
 	}
 
 	@After
@@ -79,26 +80,18 @@ public class CopyControllerUnitTest {
 		assertThat(controller.isStoped(), is(true));
 	}
 
-	@Test(expected = IllegalStateException.class)
-	public void copyIllegalState() {
-		this.create();
-
-		controller.run();
-	}
-
 	@Test(expected = NullPointerException.class)
-	public void copyNullFileSet() {
-		this.create();
-
-		controller.start(null);
+	public void copyNullFileSet() throws FileNotFoundException {
+		new ComplexCopyManager(null, null);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void copyEmptyFileSet() {
+	public void copyEmptyFileSet() throws FileNotFoundException {
 
 		this.create();
 
-		controller.start(new HashSet<File>());
+		controller = new ComplexCopyManager(new File("./src"), new Configurator());
+		
 		/*
 		 * an empty hash set can be finished very fast...
 		 * maby this method fails, because the thread is to slow

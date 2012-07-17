@@ -85,14 +85,6 @@ public class MappingFactory {
 		return String.format(".%s", fileExtension);
 	}
 
-	public File getDefaultTextfileMapping(Textfile textfile) {
-		return new File(this.geDefaultParentDirectories(textfile), 
-					this.getDefaultFileName(textfile) + 
-					this.getYear(textfile) + 
-					this.getDefaultFileExtension()
-				);
-	}
-
 	public File geDefaultParentDirectories(Textfile textfile) {
 		return new File(this.getDefaultOutputDirectory(textfile.getOutputType()), 
 				this.getDefaultFileName(textfile));
@@ -128,27 +120,110 @@ public class MappingFactory {
 
 		if (inputTextfile == null || inputSource == null) { throw new NullPointerException(); }
 
-		boolean booleanResult = this.getLanguageFilter().apply(Pair.create(inputTextfile.getLanguage(), inputSource.getLocation().getDomain()));
+		final boolean booleanResult;
+		
+		if (inputSource.getLocation() == null) {
+			booleanResult = false;
+		} else {
+			booleanResult = this.getLanguageFilter().apply(Pair.create(inputTextfile.getLanguage(), inputSource.getLocation().getDomain()));
+		}
 		log.info(String.format("%s '%s' with %s '%s' %s supported by language filter '%s' ", Textfile.class.getSimpleName(), inputTextfile, Source.class.getSimpleName(), inputSource, (booleanResult ? "is" : "is not"), this.getLanguageFilter()));
 		
 		return booleanResult;
+	}
+
+	public File getDefaultTextfileMapping(Textfile textfile) {
+		return this.newFile(textfile,new File(this.geDefaultParentDirectories(textfile), 
+				this.getDefaultFileName(textfile) + 
+				this.getYear(textfile) + 
+				this.getDefaultFileExtension()
+			), this.getConfigurator().getDefaultSplitSize());
 	}
 
 	public File getSourceDomainMapping(final Textfile textfile, final Source source) {
 
 		if (!this.isSupportedSourceLanguage(textfile, source)) { return this.getDefaultTextfileMapping(textfile); }
 		
-		// default file extension should contain a '.' sign ahead, otherwise it may get added here
-		return new File(this.geDefaultParentDirectories(textfile), 
+		return this.newFile(textfile, new File(this.geDefaultParentDirectories(textfile), 
 					textfile.getLanguage() + DIVISION_SIGN +
 					source.getLocation().getDomain() + DIVISION_SIGN + 
 					this.getTextfileType(textfile) + 
 					this.getYear(textfile) + 
 					this.getDefaultFileExtension()
-				);
+				), this.getConfigurator().getDefaultSplitSize());
 
 	}
 	
+	public File newFile(final Textfile textfile, final File inputFile, final long fileSplitSize) {
+		
+		if (fileSplitSize == Configurator.DEFAULT_SPLIT_SIZE) {
+			return inputFile;
+		}
+		
+		final String fileName = inputFile.getName();
+		final Pattern fileNamePrefixPattern = Pattern.compile("(([a-z_-]+)(\\d{4})?(_(\\d{4}))?)");
+		
+		Matcher matcher = fileNamePrefixPattern.matcher(fileName);
+		
+		String fileNamePrefix;
+		final int numberToIncrement;
+		final String fileNameSuffix = this.getDefaultFileExtension();
+		
+		final String year;
+		if (this.getYear(textfile).isEmpty()) {
+			year = null;
+		} else if (this.getYear(textfile).startsWith(DIVISION_SIGN)) {
+			year = this.getYear(textfile).substring(1);
+		} else {
+			year = this.getYear(textfile);
+		}
+		
+		if (matcher.find()) {
+			fileNamePrefix = matcher.group(2);
+			
+			// no number exists (no year, no incrementable number)
+			if (matcher.group(3) == null || matcher.group(3).isEmpty()) {
+				numberToIncrement = 0;
+			// if the first number found, is equals the year
+				// that is really ugly... what can be done?! the getYear function returns a '_YEAR' string or is empty ''.
+			} else if (year != null && matcher.group(3).equals(year)) {
+				// then append the year, and DIVISION SIGN
+				fileNamePrefix += matcher.group(3) + DIVISION_SIGN;
+				
+				// first one, the second number exists also: increment the second number
+				if (matcher.group(5) != null && !matcher.group(5).isEmpty()) {
+					numberToIncrement = Integer.parseInt(matcher.group(5));
+				// second: no second number exists, therefore initialize a second number by 0
+				} else {
+					numberToIncrement = 0;
+				}
+			// last and actually also the least: the found number is not the year: therefore increment by 1
+			// TODO probably BUG AREA NR 1: because, how do we know the year? what about, old files like 2011, which should be addressed now 2012... 
+			} else {
+				numberToIncrement = Integer.parseInt(matcher.group(3));
+			}
+		} else {
+			log.error("The file name prefix pattern did not find any group of input file name: {}. Returning the assigned input file as it is, without any changes.", inputFile.getName());
+			return inputFile;
+		}
+		
+		// build everything together
+		final String splitNumberString;
+		if (inputFile.length() >= fileSplitSize * 1024) {
+			splitNumberString = String.format("%04d", numberToIncrement + 1);
+		} else {
+			splitNumberString = String.format("%04d", numberToIncrement);
+		}
+		
+		File newFile = new File(inputFile.getParent(), fileNamePrefix + splitNumberString + fileNameSuffix); 
+		
+		// if the expected file is also already full... try recursivly...
+		if (newFile.exists() && newFile.length() >= fileSplitSize * 1024) {
+			return this.newFile(textfile, newFile, fileSplitSize);
+		}
+		return newFile;
+	}
+
 	@Override
 	public int hashCode() {
 		int hashCode = 0;

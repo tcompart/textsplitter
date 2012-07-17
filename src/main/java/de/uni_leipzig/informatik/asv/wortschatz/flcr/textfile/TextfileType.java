@@ -32,7 +32,7 @@ public enum TextfileType {
 
 		final String shortForm = this.getShortForm();
 		if (shortForm != null) {
-			this.outputName = inputPrefix + shortForm.toLowerCase();
+			this.outputName = String.format("%s-%s",inputPrefix, shortForm.toLowerCase());
 		} else {
 			throw new IllegalArgumentException("The short form of the assigned enum '" + this.toString()
 					+ "' has to be initialized.");

@@ -1,9 +1,11 @@
 package de.uni_leipzig.informatik.asv.wortschatz.flcr.test;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Level;
@@ -11,7 +13,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.spi.LoggerFactoryBinder;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReachedEndException;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.SelectorPool;
@@ -78,4 +79,80 @@ public class SelectorPoolIntegrationTest extends SelectorPoolUnitTest {
 			fail("Actually many many object should have been created without an out of memory. Therefore the objects are not released properly: "+ exception.toString());
 		}
 	}
+	
+	@Test
+	public void selectorPoolThreadSafe() {
+		
+		final int MAX = 1000000;
+		
+		final SelectorPool<String> selectorPool = new SelectorPool<String>("selectorPoolName") {
+
+			private final AtomicInteger count = new AtomicInteger(0);
+			
+			@Override
+			protected String create() throws ReachedEndException,
+					InterruptedException {
+				
+				final int number = count.incrementAndGet();
+				
+				if (number > MAX) { throw new ReachedEndException(); }
+				
+				return String.format("%s_%d", "object_string_id", number);
+			}
+
+			@Override
+			public int size() {
+				return MAX;
+			}
+
+			@Override
+			public boolean validate(String obj) {
+				return (obj != null && !obj.isEmpty());
+			}
+
+			@Override
+			protected void releaseObj(String obj) {
+				obj = null;
+			}
+		};
+		
+		// create as many threads as objects exist, and all try to pull objects from selectorPool
+		for (int i = 0; i < MAX; i++) { 
+			new Thread(new SelectorPoolThreadTest(selectorPool));
+		}
+		
+		
+	}
+	
+	private static class SelectorPoolThreadTest implements Runnable {
+
+		private static final BlockingQueue<String> queue = new LinkedBlockingQueue<String>();
+		
+		private final SelectorPool<String> selectorPool;
+
+		public SelectorPoolThreadTest(final SelectorPool<String> inputSelectorPool) {
+			this.selectorPool = inputSelectorPool;
+		}
+
+		@Override
+		public void run() {
+			while (this.selectorPool.isFinished()) {
+				final String type;
+				try {
+					type = this.selectorPool.acquire();
+				} catch (ReachedEndException e) {
+					log.info("Reached the end of selector pool. Breaking here. This means should occur only once.");
+					break;
+				}
+				
+				synchronized (queue) {
+					assertThat(queue.contains(type), is(false));
+					assertThat(queue.offer(type), is(true));
+					assertThat(queue.contains(type), is(true));
+				}
+			}
+		}
+		
+	}
+	
 }

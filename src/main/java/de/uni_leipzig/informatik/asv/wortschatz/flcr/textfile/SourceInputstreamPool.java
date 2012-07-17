@@ -66,11 +66,6 @@ public class SourceInputstreamPool extends SelectorPool<Source> {
 	public int size() {
 		return this.sourceCounter.intValue();
 	}
-	
-	@Override
-	public boolean finished() {
-		return this.sourceFinder.finished();
-	}
 
 	@Override
 	public boolean validate(final Source inputObj) {
@@ -132,18 +127,17 @@ public class SourceInputstreamPool extends SelectorPool<Source> {
 				log.debug(String.format("%s: Starting run", instance_name));
 			}
 			
-			BufferedReader localReader;
+			LineNumberReader localReader;
 			try {
-				localReader = this.getReader();
+				localReader = new LineNumberReader(this.getReader());
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			}
 			
 			AtomicInteger localCounter = new AtomicInteger(0);
+			Source source = null;
 			try {
 				StringBuffer stringBuffer = null;
-				Source source = null;
-
 				String line = null;
 				while ((line = localReader.readLine()) != null) {
 					if (line.startsWith(SOURCE_START)) {
@@ -157,7 +151,7 @@ public class SourceInputstreamPool extends SelectorPool<Source> {
 						
 						stringBuffer = new StringBuffer();
 						source = new Source(line, stringBuffer);
-						
+						source.setLineNumber(localReader.getLineNumber());
 					}
 					
 					if (Development.assertionsEvaluated) {
@@ -173,12 +167,11 @@ public class SourceInputstreamPool extends SelectorPool<Source> {
 					this.publish(this.queue, source);
 				}
 			} catch (IOException ex) {
-				ex.printStackTrace(); // this exists, because runtime exceptions may get caught by an execution service
 				throw new RuntimeException(String.format(
 						"Critical runtime exception. Unable to read via %s '%s'",
 						LineNumberReader.class.getSimpleName(), localReader.toString()), ex);
 			} catch (OutOfMemoryError ex) {
-				throw new OutOfMemoryError(String.format("%s: after a number of collected sources '%d'", ex.getMessage(), localCounter.get()));
+				throw new OutOfMemoryError(String.format("%s: after a number of collected sources '%d' (source '%s' at line '%d')", ex.getMessage(), localCounter.get(), source, source.getLineNumber()));
 			} finally {
 				this.finished = true;
 				try {

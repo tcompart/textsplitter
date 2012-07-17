@@ -45,6 +45,8 @@ public abstract class SelectorPool<T> {
 
 	private final String name;
 
+	private boolean finished = false;
+
 	public SelectorPool(final String inputName) {
 		this(inputName, null, null, DEFAULT_EXPIRATIONTIME);
 	}
@@ -102,7 +104,7 @@ public abstract class SelectorPool<T> {
 
 		this.lockedObjs.remove(obj);
 		this.unlockedObjs.remove(obj);
-
+		
 		this.releaseObj(obj);
 
 	}
@@ -113,39 +115,56 @@ public abstract class SelectorPool<T> {
 
 	public T acquire() throws ReachedEndException {
 
-		Long now = System.nanoTime();
+		final Long now = System.nanoTime();
 
+		if (this.isFinished()) {
+			throw new ReachedEndException();
+		}
+		
+		log.debug("[{}]: Trying to create a new object with this instance of class {}", this.getInstanceName(), SelectorPool.class.getSimpleName());
 		T t = null;
 		if (this.hasNext(now)) {
 			t = this.getNext();
 		} else {
-			for (;; t = null) {
+			for (t = null;t == null; t = null) {
 				try {
-					t = this.create();
+					this.finished = true;
+					
+					try {
+						t = this.create();
+						log.debug("[{}]: Succeeded in creating a new object", this.getInstanceName());
+						this.finished = false;
+					} catch (ReachedEndException ex) {
+						log.warn("[{}]: Reached the end of the production. Throwing now an exception.", this.getInstanceName());
+						log.info("[{}]: Finished? {}", this.getInstanceName(), this.isFinished());
+						throw ex;
+					}
+					
 					if (!this.validate(t)) {
-						if (INFO_ENABLED)
-							log.info(String.format("[%s]: Failed validation for object '%s'. Proceeding with creating an new object.",this.getInstanceName(), t.toString()));
+						log.info("[{}]: Failed validation for object '{}'. Proceeding with creating an new object.",this.getInstanceName(), t.toString());
 						continue;
 					}
 				
 					if (this.filter != null && !this.filter.apply(t)) {
-						if (INFO_ENABLED)
-							log.info(String.format("[%s]: Filter does not allow object '%s'. Proceeding with creating an new object.",this.getInstanceName(), t.toString()));
+						log.info("[{}]: Filter does not allow object '{}'. Proceeding with creating an new object.",this.getInstanceName(), t.toString());
 						continue;
 					}
 					
-					if (DEBUG_ENABLED)
-						log.debug(String.format("[%s]: Unlocking object '%s'. Keeps present until it gets released.", this.getInstanceName(),t.toString()));
+					log.debug("[{}]: Unlocking object '{}'. Keeps present until it gets released.", this.getInstanceName(),t.toString());
 					
 					assert t != null;
 					assert now != null;
 					
 					this.unlockedObjs.put(t, now);
+
+					assert this.lockedObjs.size() < 1000;
+					assert this.unlockedObjs.size() < 1000;
+					
 					break;	
 				} catch (InterruptedException ex) {
 					// the #create() method is a blocking method, which can
 					// be interrupted
-					log.warn(String.format("[%s]: Interupted while creating an new object.", this.getInstanceName()));
+					log.warn("[{}]: Interrupted while creating an new object.", this.getInstanceName());
 				}
 			}
 		}
@@ -167,10 +186,11 @@ public abstract class SelectorPool<T> {
 			return this.getClass().getSimpleName();
 	}
 
-	public boolean finished() {
-		return this.currentNumber() >= this.size();
+	public boolean isFinished() {
+		return this.finished;
 	}
-
+	
+	
 	/**
 	 * @return
 	 */

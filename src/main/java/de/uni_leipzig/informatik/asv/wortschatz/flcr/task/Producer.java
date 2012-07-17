@@ -48,7 +48,7 @@ public abstract class Producer<Input, Output> extends BasicListenerClass impleme
 		this.identifier = sb.toString();
 
 		if (log.isInfoEnabled()) {
-			log.info(String.format("[%s]: newly created.", this.getIdentifier()));
+			log.info("[{}]: newly created.", this.getIdentifier());
 		}
 	}
 
@@ -68,10 +68,14 @@ public abstract class Producer<Input, Output> extends BasicListenerClass impleme
 
 	@Override
 	public void run() {
-		while (!this.finished() && !Thread.interrupted()) {
+		while (!this.isFinished() && !Thread.interrupted()) {
+			
+			log.debug("[{}]: is still alive and producing!", this.getIdentifier());
+			
 			Input in = null;
 			Output out = null;
 			try {
+				log.debug("[{}]: trying to acquire an object of {} '{}'", new Object[]{ this.getIdentifier(), SelectorPool.class.getSimpleName(), this.getPool()});
 				in = this.getPool().acquire();
 				if (in != null) {
 
@@ -119,11 +123,12 @@ public abstract class Producer<Input, Output> extends BasicListenerClass impleme
 				this.finish();
 			}
 		}
+		log.info("[{}]: stopping thread. Nothing to do anymore.", this.getIdentifier());
 	}
 
 	private void addToQueue(final Output output) {
-		log.debug(String.format("[%s]: Trying to put object of class '%s' into the producing queue.", this
-				.getIdentifier(), output.getClass().getSimpleName()));
+		log.debug("[{}]: Trying to put object of class '{}' into the producing queue.", this
+				.getIdentifier(), output.getClass().getSimpleName());
 
 		
 		try {
@@ -133,7 +138,7 @@ public abstract class Producer<Input, Output> extends BasicListenerClass impleme
 				}
 			}
 		} catch (InterruptedException ex) {
-			log.info(String.format("[%s]: was interrupted while offering an object to input queue. Trying again.",this.getIdentifier()));
+			log.info("[{}]: was interrupted while offering an object to input queue. Trying again.",this.getIdentifier());
 			ex.printStackTrace();
 		} finally {
 			// this may fail, because the objects is taken before this point of code can be reached
@@ -145,9 +150,8 @@ public abstract class Producer<Input, Output> extends BasicListenerClass impleme
 	}
 
 	private void releaseFromPool(Input input) {
-		log.debug(String.format(
-				"[%s]: Releasing the input object of class '%s' back to pool.", this.getIdentifier(), input
-						.getClass().getSimpleName()));
+		log.debug("[{}]: Releasing the input object of class '{}' back to pool.", this.getIdentifier(), input
+						.getClass().getSimpleName());
 		this.getPool().release(input);
 	}
 
@@ -157,7 +161,7 @@ public abstract class Producer<Input, Output> extends BasicListenerClass impleme
 		}
 	}
 
-	private boolean finished() {
+	public boolean isFinished() {
 		return this.reachedEnd;
 	}
 

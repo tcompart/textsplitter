@@ -18,7 +18,7 @@ import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Source;
 
 public class SourceUnitTest {
 
-	private static final String sourceString = "<source><location>http://dda.mty.itesm.mx/romulogarza/comite.html</location><date>2011-02-02</date><user>Treasurer</user><original_encoding>iso-8859-1</original_encoding><language>spa</language></source>";
+	public static final String sourceString = "<source><location>http://dda.mty.itesm.mx/romulogarza/comite.html</location><date>2011-02-02</date><user>Treasurer</user><original_encoding>iso-8859-1</original_encoding><language>spa</language></source>";
 
 	private static File inputFile;
 
@@ -84,4 +84,15 @@ public class SourceUnitTest {
 		assertThat(source.equals(toCompare), is(true));
 
 	}
+	
+	@Test(timeout=20)
+	public void testTimeGetDomain() {
+		assertThat(source.getLocation().getDomain(), notNullValue());
+	}
+	
+	@Test(timeout=20)
+	public void testTimeToString() {
+		assertThat(source.toString(), notNullValue());
+	}
+	
 }

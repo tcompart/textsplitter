@@ -73,8 +73,11 @@ public class IOUtil {
 		
 		if (inputDirectory.isDirectory()) {
 			for (File innerFile : inputDirectory.listFiles()) {
-				if (innerFile.isFile() || (innerFile.isDirectory() && recursive))
+				if (innerFile.isFile()) {
+					resultSet.add(innerFile);
+				} else if (innerFile.isDirectory() && recursive) {
 					resultSet.addAll(getFiles(innerFile, recursive));
+				}
 			}
 		} else if (inputDirectory.isFile()) {
 			resultSet.add(inputDirectory);

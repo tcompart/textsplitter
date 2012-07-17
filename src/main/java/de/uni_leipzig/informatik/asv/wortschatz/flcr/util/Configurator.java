@@ -11,16 +11,16 @@ import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
 public class Configurator {
 
 	public static final String PROPERTY_YEAR = "flcr.year";
-	public static final String PROPERTY_BASE_OUTPUT = "flcr.output.base";
-	public static final String PROPERTY_FINDLINKS = "flcr.fl.name";
-	public static final String PROPERTY_WEBCRAWL = "flcr.cr.name";
 
-	public static final String PROPERTY_SPLIT_PREFIX = "flcr.split";
-	public static final String PROPERTY_LANGUAGE_DOMAIN_PREFIX = PROPERTY_SPLIT_PREFIX + ".ld";
-	public static final String PROPERTY_BASE_LANGUAGE_ALLOWED = "flcr.filter.sourcefilter.base.language.allow";
+	public static final String PROPERTY_BASE_OUTPUT = "flcr.output.base";
 	public static final String PROPERTY_BASE_FILE_EXTENSION = PROPERTY_BASE_OUTPUT + ".file.extension";
+	
+	public static final String PROPERTY_SPLIT_PREFIX = "flcr.split";
+	public static final String PROPERTY_SPLIT_SIZE = PROPERTY_SPLIT_PREFIX + ".size";
 	public static final String PROPERTY_LANGUAGE_LIST_NAME = PROPERTY_SPLIT_PREFIX + ".configuration.name";
 
+	
+	public static final long	DEFAULT_SPLIT_SIZE = 0;
 	public static final Integer DEFAULT_YEAR = 2012;
 	public static final String DEFAULT_BASE_OUTPUT_DIRECTORY = "/tmp";
 	public static final String DEFAULT_BASE_FILE_EXTENSION = ".txt";
@@ -32,12 +32,14 @@ public class Configurator {
 	private final String baseOutputDirectory;
 	private final String baseFileExtension;
 	private final String textfileLanguageListName;
+	private final long baseFileSplitSize;
 
 	public Configurator() {
 		year = DEFAULT_YEAR;
 		baseOutputDirectory = DEFAULT_BASE_OUTPUT_DIRECTORY;
 		baseFileExtension = DEFAULT_BASE_FILE_EXTENSION;
 		textfileLanguageListName = DEFAULT_LANGUAGE_LIST_NAME;
+		baseFileSplitSize = DEFAULT_SPLIT_SIZE;
 	}
 
 	public Configurator(Properties properties) {
@@ -50,6 +52,7 @@ public class Configurator {
 				.getProperty(PROPERTY_BASE_FILE_EXTENSION) : DEFAULT_BASE_FILE_EXTENSION);
 		this.textfileLanguageListName = (properties.containsKey(PROPERTY_LANGUAGE_LIST_NAME) ? properties
 				.getProperty(PROPERTY_LANGUAGE_LIST_NAME) : DEFAULT_LANGUAGE_LIST_NAME);
+		this.baseFileSplitSize = (properties.containsKey(PROPERTY_SPLIT_SIZE) ? Long.parseLong(properties.getProperty(PROPERTY_SPLIT_SIZE)) : DEFAULT_SPLIT_SIZE);
 	}
 
 	public Configurator(File propertyFile) throws FileNotFoundException {
@@ -75,13 +78,6 @@ public class Configurator {
 		this.baseOutputDirectory = (temporaryBaseDirectory != null ? temporaryBaseDirectory
 				: DEFAULT_BASE_OUTPUT_DIRECTORY);
 
-		String temporaryBaseLanguageAllowedProperty = null;
-		try {
-			temporaryBaseLanguageAllowedProperty = reader.getProperty(PROPERTY_BASE_LANGUAGE_ALLOWED);
-		} catch (EntryNotFoundException e) {
-			// ignore -> catched
-		}
-
 		String temporaryBaseOutputFileExtension = null;
 		try {
 			temporaryBaseOutputFileExtension = reader.getProperty(PROPERTY_BASE_FILE_EXTENSION);
@@ -99,7 +95,15 @@ public class Configurator {
 		}
 		this.textfileLanguageListName = (temporaryTextfileLanguageDomainFileName != null ? temporaryTextfileLanguageDomainFileName
 				: DEFAULT_LANGUAGE_LIST_NAME);
-
+		
+		long temporaryBaseFileSplitSize = 0;
+		try {
+			temporaryBaseFileSplitSize = Long.parseLong(reader.getProperty(PROPERTY_SPLIT_SIZE));
+		} catch (EntryNotFoundException ex) {
+			// ignore -> catched
+		}
+		this.baseFileSplitSize = (temporaryBaseFileSplitSize != 0 ? temporaryBaseFileSplitSize : DEFAULT_SPLIT_SIZE);
+		
 	}
 
 	public Configurator(Configurator inputConfigurator) {
@@ -107,6 +111,7 @@ public class Configurator {
 		this.baseOutputDirectory = inputConfigurator.getBaseOutputDirectory();
 		this.baseFileExtension = inputConfigurator.getDefaultFileExtension();
 		this.textfileLanguageListName = inputConfigurator.getTextfileLanguageListFileName();
+		this.baseFileSplitSize = inputConfigurator.getDefaultSplitSize();
 	}
 
 	public static Configurator getConfiguration() {
@@ -162,6 +167,10 @@ public class Configurator {
 
 	public String getDefaultFileExtension() {
 		return this.baseFileExtension;
+	}
+	
+	public long getDefaultSplitSize() {
+		return this.baseFileSplitSize;
 	}
 
 	public String getTextfileLanguageListFileName() {

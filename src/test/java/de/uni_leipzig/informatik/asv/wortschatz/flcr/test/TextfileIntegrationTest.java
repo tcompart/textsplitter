@@ -19,8 +19,9 @@ import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReachedEndException;
 
 public class TextfileIntegrationTest extends TextfileUnitTest {
 
-	private static Logger log = LoggerFactory.getLogger(TextfileIntegrationTest.class);
-	
+	private static Logger log = LoggerFactory
+			.getLogger(TextfileIntegrationTest.class);
+
 	@Test
 	public void compareTextfile() throws IOException {
 		Textfile textfile = new Textfile(file1);
@@ -30,39 +31,113 @@ public class TextfileIntegrationTest extends TextfileUnitTest {
 		// string buffer, which should be compared to all sources
 		BufferedReader reader = new BufferedReader(new FileReader(file1));
 		final StringBuffer stringBufferToBeCompared = new StringBuffer();
-		
+
 		String line = null;
 		while ((line = reader.readLine()) != null) {
 			stringBufferToBeCompared.append(line);
 			stringBufferToBeCompared.append("\n");
 		}
-		
+
 		final StringBuffer allSourcesStringBuffer = new StringBuffer();
 		try {
-			for (Source source = textfile.getNext(); source != null; source = textfile.getNext()) {
+			for (Source source = textfile.getNext(); source != null; source = textfile
+					.getNext()) {
 				sourceCounter++;
-				log.info(String.format("Checking next source: '%s'", source.toString()));
+				log.info(String.format("Checking next source: '%s'",
+						source.toString()));
 
 				/*
 				 * get content of every source instance
 				 */
 				final String sourceAddress = source.toString();
-				
+
 				assertThat(source.getContent().indexOf(sourceAddress), is(0));
-				assertThat(source.getContent().indexOf("\n") == sourceAddress.length(), is(true));
-				
+				assertThat(
+						source.getContent().indexOf("\n") == sourceAddress
+								.length(),
+						is(true));
+
 				allSourcesStringBuffer.append(source.getContent());
-				
+
 			}
 			fail("Reached the end of sources.");
 		} catch (ReachedEndException ex) {
 			// ignore
 		}
 		assertThat(sourceCounter, is(textfile.getNumberOfSources()));
-		
-		final String assertionMsg = String.format("%d and %d do not match!", allSourcesStringBuffer.length(), stringBufferToBeCompared.length());		
-		assertThat(assertionMsg, allSourcesStringBuffer.toString(), is(stringBufferToBeCompared.toString()));
-		
+
+		final String assertionMsg = String.format("%d and %d do not match!",
+				allSourcesStringBuffer.length(),
+				stringBufferToBeCompared.length());
+		assertThat(assertionMsg, allSourcesStringBuffer.toString(),
+				is(stringBufferToBeCompared.toString()));
+
+	}
+
+	@Test(timeout = 100)
+	public void testSpeedGetLanguage() throws IOException {
+		Textfile textfile = new Textfile(file1);
+		assertThat(textfile.getLanguage(), notNullValue());
+	}
+
+	@Test(timeout = 1000)
+	public void testSpeedLoadingOfTheFirst20SourcesBig() throws IOException {
+		Textfile textfile = new Textfile(file2);
+		int sourceCounter = 0;
+		try {
+			for (Source source = textfile.getNext(); source != null; source = textfile
+					.getNext()) {
+				sourceCounter++;
+
+				if (sourceCounter >= 60) {
+					break;
+				}
+
+			}
+		} catch (ReachedEndException ex) {
+			// ignore
+		}
+
+	}
+
+	private static Textfile textfileSMALL;
+	static {
+		try {
+			textfileSMALL = new Textfile(file1);
+		} catch (IOException e) {
+			textfileSMALL = null;
+		}
+
+	}
+
+	@Test(timeout=20)
+	public void testTimeToString() {
+		textfileSMALL.toString();
 	}
 	
+	/*
+	 * strange problem:
+	 * textfileSMALL is the smaller one, although it requires more time than the
+	 *  problem is here, that the textfileSMALL runs already the SourceInputStreamPool and loads ALL sources
+	 * textfileBIG (called only 'file2' here)
+	 */
+	//TODO fix this phanomean
+	@Test(timeout = 1500)
+	public void testSpeedLoadingOfTheFirst20SourcesSmall() throws IOException {
+		int sourceCounter = 0;
+		try {
+			for (Source source = textfileSMALL.getNext(); source != null; source = textfileSMALL
+					.getNext()) {
+				sourceCounter++;
+
+				if (sourceCounter >= 60) {
+					break;
+				}
+
+			}
+		} catch (ReachedEndException ex) {
+			// everything ok!!
+		}
+
+	}
 }

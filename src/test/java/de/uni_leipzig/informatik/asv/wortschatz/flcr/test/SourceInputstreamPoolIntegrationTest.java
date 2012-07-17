@@ -36,7 +36,7 @@ public class SourceInputstreamPoolIntegrationTest extends SourceInputstreamPoolU
 		
 		final SourceInputstreamPool pool = new SourceInputstreamPool(file);
 		
-		assertThat(pool.finished(), is(false));
+		assertThat(pool.isFinished(), is(false));
 		
 		try {
 			for (Source source = pool.acquire(); source != null; toBeVarifiedNumberOfSources++, source = pool.acquire()) {
@@ -52,12 +52,12 @@ public class SourceInputstreamPoolIntegrationTest extends SourceInputstreamPoolU
 			}
 		} catch (ReachedEndException ex) {
 			log.info("Finished aquiring every source; number of sources: {}", toBeVarifiedNumberOfSources);
-			assertThat(String.format("%d <= %d", pool.currentNumber(), pool.size()), pool.finished(), is(true));
+			assertThat(String.format("%d <= %d", pool.currentNumber(), pool.size()), pool.isFinished(), is(true));
 		}
 		assertNumberOfSources(pool.size(), file);
 	}
 
-	private synchronized String getNextSource(File file, final int expectedNumberOfSource) {
+	private synchronized String getNextSource(final File file, final int expectedNumberOfSource) {
 		
 		log.debug(String.format("%s: searching for source nr %d", "getNextSource", expectedNumberOfSource));
 		

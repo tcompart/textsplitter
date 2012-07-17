@@ -1,6 +1,7 @@
 package de.uni_leipzig.informatik.asv.wortschatz.flcr.task;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -35,16 +36,17 @@ public abstract class Consumer<T> extends BasicListenerClass implements Runnable
 		this.identifier = sb.toString();
 
 		if (log.isInfoEnabled()) {
-			log.info(String.format("[%s]: newly created.", this.getIdentifier()));
+			log.info("[{}]: newly created.", this.getIdentifier());
 			if (inputCheck == null) {
-				log.info(String.format("%s: A validation of the results (Check) is disabled.", this.getIdentifier()));
+				log.info("[{}]: A validation of the results (Check) is disabled.", this.getIdentifier());
 			} else {
-				log.info(String.format("%s: A validation of the results (Check) is enabled.", this.getIdentifier()));
+				log.info("[{}]: A validation of the results (Check) is enabled.", this.getIdentifier());
 			}
 		}
 	}
 
 	private final String identifier;
+	private boolean finished = false;
 
 	public String getIdentifier() {
 		return this.identifier;
@@ -55,14 +57,24 @@ public abstract class Consumer<T> extends BasicListenerClass implements Runnable
 	@Override
 	public void run() {
 		boolean interrupted = false;
-		while (!Thread.interrupted()) {
+		finished = false;
+		while (!this.isFinished() && !Thread.interrupted()) {
+			
+			log.debug("[{}]: is still alive and consuming!", this.getIdentifier());
+			
 			T t = null;
 			boolean taken = false;
 			try {
 				t = this.queue.take();
+				
+				if (t == null) {
+					this.finish();
+					break;
+				}
+				
 				taken = (t != null && !this.queue.contains(t));
 				if (taken) {
-					log.debug(String.format("[%s]: consuming new taken object of queue.", this.getIdentifier()));
+					log.debug("[{}]: consuming new taken object of queue.", this.getIdentifier());
 					this.consume(t);
 					taken = !taken;
 				} else {
@@ -83,18 +95,16 @@ public abstract class Consumer<T> extends BasicListenerClass implements Runnable
 					if (this.check != null) {
 						try {
 							this.check.validate(t);
-							log.info(String.format(
-									"[%s]: CHECK SUCCESSFUL using check of class '%s'", this.getIdentifier(),
-									this.check.getClass().getSimpleName()));
+							log.info("[{}]: CHECK SUCCESSFUL using check of class '{}'", this.getIdentifier(),
+									this.check.getClass().getSimpleName());
 						} catch (CheckFailedException ex) {
-							log.error(String.format("[%s]: CHECK FAILED using check of class '%s'", this
-									.getIdentifier(), this.check.getClass().getSimpleName()));
+							log.error("[{}]: CHECK FAILED using check of class '{}'", this
+									.getIdentifier(), this.check.getClass().getSimpleName());
 							this.returnObjectBackToQueue(t);
 						}
 					} else {
-						log.info(String.format(
-								"[%s]: check of object is disabled. Object passed therefore test.",
-								this.getIdentifier()));
+						log.info("[{}]: check of object is disabled. Object passed therefore test.",
+								this.getIdentifier());
 					}
 					if (this.resultQueue != null)
 						this.resultQueue.offer(true);
@@ -116,10 +126,21 @@ public abstract class Consumer<T> extends BasicListenerClass implements Runnable
 				}
 			}
 		}
+		log.info("[{}]: stopping thread. Nothing to do anymore.", this.getIdentifier());
+	}
+
+	private void finish() {
+		if (!this.finished) {
+			this.finished = !this.finished;
+		}
+	}
+
+	public boolean isFinished() {
+		return this.finished ;
 	}
 
 	private void returnObjectBackToQueue(T t) {
-		log.info(String.format("[%s]: returning object back to queue.", this.getIdentifier()));
+		log.info("[{}]: returning object back to queue.", this.getIdentifier());
 		
 		while (!this.queue.offer(t) && !this.queue.contains(t)) {
 			try {
@@ -127,7 +148,7 @@ public abstract class Consumer<T> extends BasicListenerClass implements Runnable
 									// time...
 			} catch (InterruptedException ex) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("[%s]: interrupted while ofering object to queue.", this.getIdentifier()));
+					log.debug("[{}]: interrupted while ofering object to queue.", this.getIdentifier());
 				}
 			}
 		}

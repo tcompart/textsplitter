@@ -6,7 +6,8 @@ package de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author <a href="mail:compart@informatik.uni-leipzig.de">Torsten Compart</a>
@@ -19,7 +20,7 @@ public class Source {
 	public static final String languageStart = "<language>";
 	public static final String languageEnd = "</language>";
 
-	private static Logger log = Logger.getLogger(Source.class);
+	private static Logger log = LoggerFactory.getLogger(Source.class);
 
 	private final String source;
 	private final StringBuffer content;
@@ -47,21 +48,19 @@ public class Source {
 			try {
 				this.location = new Location(new URL(locationSubString));
 			} catch (MalformedURLException ex) {
-				log.warn("Malformed URL exception because of not initialized location string: '" + locationSubString
-						+ "'");
+				log.warn("[{}]: Malformed URL exception because of not initialized location string: '{}'", this.toString(), locationSubString);
 			}
-			log.debug(String.format("Found location '%s' of source '%s'", locationSubString, this.source));
+			log.debug("Found location '{}' of source '{}'", locationSubString, this.source);
 		}
 		return this.location;
 	}
 
 	private String language;
-
 	public String getLanguage() {
 		if (this.language == null && this.source.indexOf(languageStart) > 0 && this.source.indexOf(languageEnd) > 0) {
 			this.language = this.source.substring(
 					this.source.indexOf(languageStart) + languageStart.length(), this.source.indexOf(languageEnd));
-			log.info(String.format("Found language '%s' of source '%s'", this.language, this.source));
+			log.info("Found language '{}' of source '{}'", this.language, this.source);
 		}
 		return this.language;
 	}
@@ -73,6 +72,16 @@ public class Source {
 	@Override
 	public String toString() {
 		return this.source;
+	}
+
+	private int lineNumber = 0;
+
+	public void setLineNumber(int inputLineNumber) {
+		this.lineNumber = inputLineNumber;
+	}
+	
+	public int getLineNumber() {
+		return this.lineNumber;
 	}
 
 /*	@Override
