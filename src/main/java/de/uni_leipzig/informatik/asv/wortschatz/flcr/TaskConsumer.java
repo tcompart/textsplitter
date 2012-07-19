@@ -44,7 +44,7 @@ public class TaskConsumer implements Runnable, Stoppable {
 					log.debug("[{}]: Taking next task of queue.",
 							this.getInstanceName());
 
-					assert this.taskQueue.size() < 100;
+					assert this.taskQueue.size() <= ComplexCopyManager.MAXIMUM_TASK_NUMBER_LIMIT : "the task queue limit was broken! More tasks then expected an assigned were placed into the queue.";
 
 					task = this.taskQueue.poll(1, TimeUnit.SECONDS);
 					if (task == null) {

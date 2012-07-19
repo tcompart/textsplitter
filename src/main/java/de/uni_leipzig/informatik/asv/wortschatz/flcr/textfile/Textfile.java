@@ -34,6 +34,8 @@ import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.SelectorPool;
  */
 public class Textfile {
 
+	public static final String NO_LANGUAGE = "NO_LANGUAGE";
+
 	/**
 	 * This value should not change. This value is meant to parse a returned
 	 * value for a default value, which would make the requested year invalid.
@@ -172,7 +174,7 @@ public class Textfile {
 			} else if (maybeOutputLanguage.isJust()) {
 				this.language = maybeOutputLanguage.getValue();
 			} else {
-				this.language = "NO_LANGUAGE";
+				this.language = NO_LANGUAGE;
 				languageErrorOccurred = true;
 				log.warn("[{}]: unable to find language of this textfile, because the used file name pattern ('{}') did not match '{}'.", new Object[]{
 							this.getTextfileName(), inputFileNamePattern.toString(), outputFileNamePattern.toString()});

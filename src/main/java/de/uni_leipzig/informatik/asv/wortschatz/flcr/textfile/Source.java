@@ -60,6 +60,10 @@ public class Source {
 		if (this.language == null && this.source.indexOf(languageStart) > 0 && this.source.indexOf(languageEnd) > 0) {
 			this.language = this.source.substring(
 					this.source.indexOf(languageStart) + languageStart.length(), this.source.indexOf(languageEnd));
+			if (this.language == null || this.language.isEmpty() || this.language.equals("null")) {
+				this.language = Textfile.NO_LANGUAGE;
+			}
+			
 			log.info("Found language '{}' of source '{}'", this.language, this.source);
 		}
 		return this.language;

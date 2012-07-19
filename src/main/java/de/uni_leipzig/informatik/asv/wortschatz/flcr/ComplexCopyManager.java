@@ -28,6 +28,8 @@ import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.MappingFactory;
 
 public class ComplexCopyManager implements CopyManager {
 
+	public static final int MAXIMUM_TASK_NUMBER_LIMIT = 1000;
+	
 	private static final Logger log = LoggerFactory
 			.getLogger(ComplexCopyManager.class);
 
@@ -87,7 +89,7 @@ public class ComplexCopyManager implements CopyManager {
 		barrier = new CyclicBarrier(numberOfParallelWorkers*2+1);
 		final MappingFactory mappingFactory = this.getMappingFactory();
 		// maximum 1000 taks queue...
-		final BlockingQueue<Task> taskQueue = new LinkedBlockingQueue<Task>(1000);
+		final BlockingQueue<Task> taskQueue = new LinkedBlockingQueue<Task>(MAXIMUM_TASK_NUMBER_LIMIT);
 		
 		if (this.hasOutputStream())
 			this.writeOutput(out, "Starting to query file queue. Number of entries: "+inputQueue.size());

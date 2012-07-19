@@ -22,7 +22,7 @@ public class ConfigurationPatternIOUtil {
 	public static final String DELIMITER = " ";
 	public static final String COMMENT_SIGN = "#";
 
-	public static final Pattern pattern = Pattern.compile("([a-z0-9_]+)\\.([a-z]+)");
+	public static final Pattern pattern = Pattern.compile("([a-z0-9_A-Z]+)\\.([a-z]+)");
 
 	private static final Logger log = LoggerFactory.getLogger(ConfigurationPatternIOUtil.class);
 

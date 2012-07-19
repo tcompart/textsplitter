@@ -93,10 +93,10 @@ public class ViewController implements Callable<Boolean> {
 
 		// the next statement would provoke a null pointer exception, if
 		// inputFile would be null (therefore no NPE for inputfile)
-		if (!inputDirectory.exists() || !inputDirectory.isDirectory()) {
+		if (!inputDirectory.exists() || !inputDirectory.canRead()) {
 			throw new FileNotFoundException(
 					String.format(
-							"File '%s' could not be found. Furthermore it has to be a directory!",
+							"File '%s' could not be found. Furthermore it has to be redable!",
 							inputDirectory.getAbsolutePath()));
 		}
 

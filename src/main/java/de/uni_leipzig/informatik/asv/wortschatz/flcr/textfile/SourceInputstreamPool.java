@@ -73,11 +73,23 @@ public class SourceInputstreamPool extends SelectorPool<Source> {
 
 	@Override
 	public boolean validate(final Source inputObj) {
-		boolean result = (inputObj != null && inputObj.getContent().length() > 0);
-		if (Development.assertionsEvaluated) {
-			assert result : String.format("Invalid source: '%s'", inputObj.toString());
+		if (inputObj == null) {
+			log.warn("The assigned Source, which had to be validated points to null, and is therefore not valid.");
+			return false;
 		}
-		return result;
+		
+		if (!(inputObj.getContent().length() > 0)) {
+			log.warn("Ignoring Source '{}' because it has no content!", inputObj);
+			return false;
+		}
+		
+		if (inputObj.getLanguage() == null || inputObj.getLanguage().isEmpty()) {
+			log.warn("Ignoring Source '{}' because no language was recognized. Moreover it points to null or a similar value. However at least the value '{}' should have been recognized.", inputObj, Textfile.NO_LANGUAGE);
+			return false;
+		}
+		
+		log.info("Source '{}' was checked as valid.", inputObj);
+		return true;
 	}
 
 	@Override

@@ -77,6 +77,11 @@ public class SimpleCopyManager implements CopyManager {
 				
 				while ((source = textfile.getNext()) != null) {
 					log.info("Taking next source of file '{}'", file.getName());
+					
+					if (this.hasOutputStream()) {
+						this.writeOutput(out, "Working on textfile '"+file.getAbsolutePath()+"' with source '"+source.toString()+"'");
+					}
+					
 					Task task = new Task(new CopyCommand(source, mappingFactory.getSourceDomainMapping(textfile, source)));
 					log.info("Creating next task '{}'", task.getUniqueIdentifier());
 					task.doTask();

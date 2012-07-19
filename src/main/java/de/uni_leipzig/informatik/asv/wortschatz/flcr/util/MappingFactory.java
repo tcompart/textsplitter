@@ -58,7 +58,7 @@ public class MappingFactory {
 	}
 
 	private String getDefaultFileName(final Textfile textfile) {
-		final String fileName = textfile.getLanguage() + DIVISION_SIGN + textfile.getOutputType().getOutputName();
+		final String fileName = textfile.getLanguage() + DIVISION_SIGN + this.getTextfileType(textfile);
 
 		return fileName;
 	}
@@ -142,8 +142,11 @@ public class MappingFactory {
 
 	public File getSourceDomainMapping(final Textfile textfile, final Source source) {
 
-		if (!this.isSupportedSourceLanguage(textfile, source)) { return this.getDefaultTextfileMapping(textfile); }
-		
+		if (!this.isSupportedSourceLanguage(textfile, source)) { 
+			log.warn("Textfile '{}' (lanuage: {}) with source '{}' are not qualified for a source domain mapping. Mapping the source the default output.", new Object[]{ textfile.getTextfileName(), textfile.getLanguage(), source.toString() });
+			return this.getDefaultTextfileMapping(textfile); 
+		}
+		log.info("Mapping Textfile '{}' (language: {}) with source '{}' to default source domain output, depending on domain '{}'", new Object[]{ textfile.getTextfileName(), textfile.getLanguage(), source, source.getLocation().getDomain()});
 		return this.newFile(textfile, new File(this.geDefaultParentDirectories(textfile), 
 					textfile.getLanguage() + DIVISION_SIGN +
 					source.getLocation().getDomain() + DIVISION_SIGN + 
@@ -161,7 +164,7 @@ public class MappingFactory {
 		}
 		
 		final String fileName = inputFile.getName();
-		final Pattern fileNamePrefixPattern = Pattern.compile("(([a-z_-]+)(\\d{4})?(_(\\d{4}))?)");
+		final Pattern fileNamePrefixPattern = Pattern.compile("(([a-zA-Z_-]+)(\\d{4})?(_(\\d{4}))?)");
 		
 		Matcher matcher = fileNamePrefixPattern.matcher(fileName);
 		

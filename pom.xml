@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.uni_leipzig.informatik.asv</groupId>
 	<artifactId>wortschatz-textsplitter</artifactId>
-	<version>1.01</version>
+	<version>1.02</version>
 
 	<dependencies>
 		<dependency>
@@ -36,7 +36,7 @@
 		<dependency>
 			<groupId>de.uni_leipzig.asv</groupId>
 			<artifactId>clarin.common</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.2</version>
 		</dependency>
 	</dependencies>
 

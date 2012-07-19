@@ -53,14 +53,17 @@ public class TaskProducer implements Runnable, Stoppable {
 					} catch (InterruptedException ex) {
 						log.warn("[{}]: Interruption while pulling file from queue.", this.getInstanceName());
 						if (file == null) {
+							log.info("[{}]: The file instance was not initialized, because of the interruption. Continuing with the next file, which works hopefully.", this.getInstanceName());
 							continue;
 						}
 					}
+					
 					// 2. CHECK FILE
 					if (file == null) {
-						log.info("[{}]: The file queue is empty now.", this.getInstanceName());
+						log.debug("[{}]: The file queue is empty now.", this.getInstanceName());
 						break;
 					}
+					
 					// 3. PRODUCE TEXTFILE
 					Textfile textfile = new Textfile(file);
 					
@@ -72,8 +75,14 @@ public class TaskProducer implements Runnable, Stoppable {
 					try {
 						// 4. FOR EVERY SOURCE OF TEXTFILE
 						while ((source = textfile.getNext()) != null) {
-							log.info("[{}]: Producing next task of source '{}'", this.getInstanceName(), source);
+							log.info("[{}]: Producing next task (Textfile '{}') of source '{}'", new Object[]{ this.getInstanceName(), textfile.getTextfileName(), source });
+							
+							if (this.hasOutputStream()) {
+								this.writeOutput(out, "Working on textfile '"+file.getAbsolutePath()+"' with source '"+source.toString()+"'");
+							}
+							
 							Task task = new Task(new CopyCommand(source, mappingFactory.getSourceDomainMapping(textfile, source)));
+							
 							// 5. OFFER TASK TO QUEUE
 							while (!this.outputQueue.offer(task)) {
 								// WAIT OTHERWISE
@@ -86,6 +95,7 @@ public class TaskProducer implements Runnable, Stoppable {
 									}
 								}
 							}
+							
 							log.debug("[{}]: Offered task {} to blocking queue, and will resume with next task.", this.getInstanceName(), task.getUniqueIdentifier());
 						}
 					} catch (ReachedEndException e) {
