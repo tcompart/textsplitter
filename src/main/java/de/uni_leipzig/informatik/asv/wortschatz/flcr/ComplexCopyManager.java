@@ -2,7 +2,10 @@ package de.uni_leipzig.informatik.asv.wortschatz.flcr;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.BrokenBarrierException;
@@ -19,52 +22,58 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.task.Task;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Configurator;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.IOUtil;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.MappingFactory;
 
-public class ComplexCopyManager implements Runnable, CopyManager {
+public class ComplexCopyManager implements CopyManager {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(ComplexCopyManager.class);
 
 	private static final AtomicInteger instanceCount = new AtomicInteger(0);
 
-	private final int numberOfCores;
-	private final ExecutorService executionService;
+	private static final int DEFAULT_NUMBER_OF_THREAD_PAIRS = 2;
+
+	private final Set<Stoppable> threads = new HashSet<Stoppable>();
+	private CyclicBarrier barrier;
+	private final int numberOfParallelWorkers;
+	private final ExecutorService executionService;;
+
+	private final String instanceName;
 	private final BlockingQueue<File> inputQueue;
 	private final MappingFactory mappingFactory;
 
-	private final String instanceName;
+	private PrintStream out;
 
-	private volatile boolean stop;
+	public ComplexCopyManager(File parentFile, Configurator configurator) throws FileNotFoundException {
+		this(parentFile, configurator, DEFAULT_NUMBER_OF_THREAD_PAIRS);
+	}
 
-	private CyclicBarrier barrier;
-
-	private boolean success;
-
-	private boolean runs;
-
-	public ComplexCopyManager(final File inputDirectory, final Configurator inputConfigurator)
+	public ComplexCopyManager(final File inputDirectory, final Configurator inputConfigurator, final int inputNumberOfThreads)
 			throws FileNotFoundException {
 		if (inputDirectory == null || inputConfigurator == null) {
 			throw new NullPointerException();
 		}
+		if (inputNumberOfThreads < 0) {
+			throw new IllegalArgumentException("The assigned thread number should be between '0 - n' (n should not be bigger than 5, otherwise the threads maybe slower than a single-thread application))");
+		}
 		if (!inputDirectory.exists()) {
 			throw new FileNotFoundException(inputDirectory.getAbsolutePath());
 		}
-		if (!inputDirectory.isDirectory() || !inputDirectory.canRead()) {
+		// trying to allow directory or file without any restrictions other than readability
+		if (!inputDirectory.canRead()) {
 			throw new IllegalArgumentException(String.format(
-					"File '%s': is no directory or cannot be read.",
+					"File '%s': cannot be read.",
 					inputDirectory.getAbsolutePath()));
 		}
-		this.numberOfCores = Runtime.getRuntime().availableProcessors();
-		this.inputQueue = new ArrayBlockingQueue<File>(10, true,
-				IOUtil.getFiles(inputDirectory, true));
-		this.executionService = Executors.newSingleThreadExecutor();
-		this.mappingFactory = new MappingFactory(inputConfigurator);
 		this.instanceName = String.format("%s_%d", ComplexCopyManager.class.getSimpleName().toLowerCase(), instanceCount.incrementAndGet());
+		final Collection<File> files = IOUtil.getFiles(inputDirectory, true);
+		this.inputQueue = new ArrayBlockingQueue<File>(files.size(), true,
+				files);
+		this.numberOfParallelWorkers = inputNumberOfThreads;
+		this.executionService = Executors.newFixedThreadPool(2*numberOfParallelWorkers+1);
+		this.mappingFactory = new MappingFactory(inputConfigurator);
 		
 	}
 
@@ -74,32 +83,31 @@ public class ComplexCopyManager implements Runnable, CopyManager {
 			log.error("[{}]: Instance of class '{}' is still running, and cannot be started again.", this.getInstanceName(), ComplexCopyManager.class.getName());
 			return;
 		}
-		assert this.isRunning() == false;
-		assert this.isStoped() == true;
-		
-		this.runs = true;
-		
-		assert this.isRunning() == true;
-		assert this.isStoped() == false;
-		
-		this.success = false;
 
-		assert this.isSuccessful() == false;
+		barrier = new CyclicBarrier(numberOfParallelWorkers*2+1);
+		final MappingFactory mappingFactory = this.getMappingFactory();
+		// maximum 1000 taks queue...
+		final BlockingQueue<Task> taskQueue = new LinkedBlockingQueue<Task>(1000);
 		
-		this.executionService.execute(this);
+		if (this.hasOutputStream())
+			this.writeOutput(out, "Starting to query file queue. Number of entries: "+inputQueue.size());
+		
+		for (int i = 0; i < numberOfParallelWorkers; i++) {
+			final TaskProducer producer = new TaskProducer(barrier, inputQueue, mappingFactory, taskQueue);
+			if (this.hasOutputStream())
+				producer.setOutputStream(out);
+			threads.add(producer);
+			executionService.execute(producer);
+		}
+		
+		for (int i = 0; i < numberOfParallelWorkers; i++) {
+			final TaskConsumer consumer = new TaskConsumer(barrier, taskQueue);
+			threads.add(consumer);
+			executionService.execute(consumer);
+		}
+		
 		this.executionService.shutdown();
 		
-		// wait until the barrier was initialized (done by thread)
-		while (this.barrier == null) {
-			synchronized (this) {
-				try {
-					log.debug("[{}]: Still waiting that the barrier gets initialized. Has not be done yet.", this.getInstanceName());
-					this.wait(1000);
-				} catch (InterruptedException e) {
-					// ignore, because we wait for the barrier to return
-				}
-			}
-		}
 	}
 
 	public boolean awaitTermination() throws InterruptedException,
@@ -109,7 +117,7 @@ public class ComplexCopyManager implements Runnable, CopyManager {
 
 	public boolean awaitTermination(long time, final TimeUnit timeUnit)
 			throws InterruptedException, ExecutionException {
-		if (!this.executionService.isShutdown() && this.barrier == null) {
+		if (!this.executionService.isShutdown() || this.barrier == null) {
 			return false;
 		}
 		
@@ -118,9 +126,6 @@ public class ComplexCopyManager implements Runnable, CopyManager {
 				this.barrier.await();
 			} else {
 				this.barrier.await(time, timeUnit);
-			}
-			if (!this.inputQueue.isEmpty()) {
-				this.awaitTermination(time, timeUnit);
 			}
 		} catch (BrokenBarrierException ex) {
 			log.error(
@@ -137,81 +142,35 @@ public class ComplexCopyManager implements Runnable, CopyManager {
 	}
 
 	@Override
-	public void run() {
-
-		while (!this.inputQueue.isEmpty() && !Thread.interrupted() && !stop) {
-			File file = null;
-			try {
-				file = inputQueue.poll(1, TimeUnit.SECONDS);
-				if (file == null) {
-					log.warn("The queue is empty, and still this Manager tried to pull next fill from queue. That should not be possible. Breaking the currently running loop now.");
-					break;
-				}
-			} catch (InterruptedException ex) {
-				log.warn(
-						"Manager was interrupted while taking next file '{}' from queue, and dispatching the next task producers and consumers.",
-						(file != null ? file.getName()
-								: "null(not initialized file instance)"));
-				continue; // continue with next file
-			}
-
-			try {
-
-				final int numberOfThreads = numberOfCores + 1;
-
-				barrier = new CyclicBarrier(numberOfThreads);
-				final Textfile textfile = new Textfile(file);
-				final MappingFactory mappingFactory = new MappingFactory(this.getConfigurator());
-				final BlockingQueue<Task> taskQueue = new LinkedBlockingQueue<Task>();
-
-				ExecutorService ecs = Executors
-						.newFixedThreadPool(numberOfThreads);
-				for (int i = 0; i < numberOfCores; i++) {
-					ecs.execute(new TaskProducer(barrier, textfile,
-							mappingFactory, taskQueue));
-				}
-
-				ecs.execute(new TaskConsumer(barrier, taskQueue));
-
-				while (barrier.getParties() != barrier.getNumberWaiting())
-					try {
-						barrier.await();
-						break;
-					} catch (InterruptedException ex) {
-						log.warn("Barrier was interrupted from its state. Continuing if not all parties have reached the same point of break.");
-					}
-			} catch (IOException ex) {
-				throw new RuntimeException(ex);
-			} catch (BrokenBarrierException ex) {
-				throw new RuntimeException(ex);
-			}
-		}
-
-		if (this.inputQueue.isEmpty()) {
-			this.success = true;
-		}
-		log.info("[{}]: Finished job.", this.getInstanceName());
-		this.runs = false;
-	}
-
-	@Override
 	public void stop() {
-		this.stop = true;
+		for (Stoppable t : threads) {
+			t.stop();
+		}
 	}
 
 	@Override
 	public boolean isRunning() {
-		return this.runs;
+		
+		if (this.barrier == null) {
+			return false;
+		}
+		
+		for (Stoppable t : threads) {
+			if (!t.isStoped()) {
+				return true;
+			}
+		}
+		return false;
 	}
-
+	
 	@Override
 	public boolean isStoped() {
-		return !this.runs;
+		return !isRunning();
 	}
 
 	@Override
 	public boolean isSuccessful() {
-		return this.success;
+		return this.inputQueue.isEmpty();
 	}
 
 	@Override
@@ -227,5 +186,37 @@ public class ComplexCopyManager implements Runnable, CopyManager {
 	@Override
 	public MappingFactory getMappingFactory() {
 		return this.mappingFactory;
+	}
+
+	@Override
+	public boolean hasModule(Module<?> module) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void addModule(Module<?> module) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void removeModule(Module<?> module) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public void writeOutput(final PrintStream out, final String msg) {
+		out.println(msg);
+	}
+
+	public boolean hasOutputStream() {
+		return this.out != null;
+	}
+	
+	@Override
+	public void setOutputStream(PrintStream inputOut) {
+		if (inputOut == null) { throw new NullPointerException(); }
+		this.out = inputOut;
 	}
 }

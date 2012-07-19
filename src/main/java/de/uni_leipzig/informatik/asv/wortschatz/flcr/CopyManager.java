@@ -1,5 +1,6 @@
 package de.uni_leipzig.informatik.asv.wortschatz.flcr;
 
+import java.io.PrintStream;
 import java.util.regex.Pattern;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
@@ -26,4 +27,12 @@ public interface CopyManager {
 	
 	MappingFactory getMappingFactory();
 
+	boolean hasModule(final Module<?> module);
+	
+	void addModule(final Module<?> module);
+	
+	void removeModule(final Module<?> module);
+
+	void setOutputStream(PrintStream out);
+	
 }

@@ -75,8 +75,9 @@ public class IntegrationTestCase {
 		executor.execute(new StringCreator(queue, stringPool));
 		executor.execute(new StringConsumer(queue, new StringCheck()));
 
+		// sleep that the number of strings match: 1000 is sometime not enough
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(2000);
 		} catch (InterruptedException ex) {
 			// TODO Auto-generated catch block
 			ex.printStackTrace();

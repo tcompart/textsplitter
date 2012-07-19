@@ -226,28 +226,46 @@ public class MappingFactory {
 
 	@Override
 	public int hashCode() {
-		int hashCode = 0;
-		
-		final int hash = 31;
-		final int seed = 13;
-		
-		hashCode += hash * seed + this.DIVISION_SIGN.hashCode();
-		hashCode += hash * seed + this.configurator.hashCode();
-		
-		return hashCode;
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((DIVISION_SIGN == null) ? 0 : DIVISION_SIGN.hashCode());
+		result = prime * result
+				+ ((configurator == null) ? 0 : configurator.hashCode());
+		result = prime
+				* result
+				+ ((textfileLanguageFilter == null) ? 0
+						: textfileLanguageFilter.hashCode());
+		return result;
 	}
-	
+
 	@Override
-	public boolean equals(final Object thatObj) {
-		
-		if (thatObj != null && thatObj instanceof MappingFactory) {
-			MappingFactory that = (MappingFactory) thatObj;
-			
-			return this.DIVISION_SIGN.equals(that.DIVISION_SIGN) &&
-					this.configurator.equals(that.configurator);
-		}
-		
-		return false;
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		MappingFactory other = (MappingFactory) obj;
+		if (DIVISION_SIGN == null) {
+			if (other.DIVISION_SIGN != null)
+				return false;
+		} else if (!DIVISION_SIGN.equals(other.DIVISION_SIGN))
+			return false;
+		if (configurator == null) {
+			if (other.configurator != null)
+				return false;
+		} else if (!configurator.equals(other.configurator))
+			return false;
+		if (textfileLanguageFilter == null) {
+			if (other.textfileLanguageFilter != null)
+				return false;
+		} else if (!textfileLanguageFilter.equals(other.textfileLanguageFilter))
+			return false;
+		return true;
 	}
+
+
 	
 }

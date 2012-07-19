@@ -1,11 +1,25 @@
 ###
-### Realisierung von ProductBacklog
-###	
-### Realisierung von Domainsplitting (SprintBacklog)
+###
+###	BUGS
+###
+###
 
+- Threads erzeugen eine OutOfMemoryException (OutputStream write e.g.), immer um die 40.000 source
+
+- Dateien mit folgenden Namen, werden noch erkannt? Sollen die erkannt werden?
+	FL____.txt
+	FL_0000.txt
+	FL_spa_____.txt
+	FL_spa_laughs.txt
+	FL_spa_deu_jpn.txt
+
+- TimeOut beim Aufruf mancher Funktionen (150ms sind nicht genug für einen Funktionsaufruf?!)
+
+- BZIP Option ist komplett untergegangen und müsste nachgetragen werden
 
 ###
 ###	IDEEN
 ###
 
-Erzeugung von Index-Strukturen vorab von allen Eingabe-Dateien.
+- VOR- und NACH-VERARBEITUNG (Module, die möglicherweise hinzu- bzw. abgeschaltet werden können: Ansatz in CopyManager (addModule, Module.isPre-, isPostModule))
+- Erzeugung von Index-Strukturen vorab von allen Eingabe-Dateien.

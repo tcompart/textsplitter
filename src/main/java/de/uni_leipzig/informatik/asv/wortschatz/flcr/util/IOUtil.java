@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 
+import org.omg.CORBA.OMGVMCID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +72,7 @@ public class IOUtil {
 	public static Collection<File> getFiles(final File inputDirectory, final boolean recursive) {
 		final Collection<File> resultSet = new HashSet<File>();
 		
-		if (inputDirectory.isDirectory()) {
+		if (inputDirectory.isDirectory() && inputDirectory.listFiles() != null) {
 			for (File innerFile : inputDirectory.listFiles()) {
 				if (innerFile.isFile()) {
 					resultSet.add(innerFile);

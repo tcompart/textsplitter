@@ -3,6 +3,7 @@ package de.uni_leipzig.informatik.asv.wortschatz.flcr;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -33,7 +34,7 @@ public class SimpleCopyManager implements CopyManager {
 		if (inputDirectory == null) { throw new NullPointerException(); }
 		if (inputConfigurator == null) { throw new NullPointerException(); }
 		if (!inputDirectory.exists()) { throw new FileNotFoundException(String.format("File '%s' does not exist.", inputDirectory.getAbsolutePath())); }
-		if (!inputDirectory.isDirectory()) { throw new IllegalArgumentException(String.format("The assigned input '%s' is not a directory.", inputDirectory.getAbsolutePath())); }
+		if (!inputDirectory.canRead()) { throw new IllegalArgumentException(String.format("The assigned input '%s' is not readable!", inputDirectory.getAbsolutePath())); }
 		this.mappingFactory = new MappingFactory(inputConfigurator);
 		final Collection<File> files = IOUtil.getFiles(inputDirectory, true);
 		
@@ -45,6 +46,7 @@ public class SimpleCopyManager implements CopyManager {
 	
 	private volatile boolean stop = true;
 	private volatile boolean success = true;
+	private PrintStream out;
 
 	@Override
 	public void start() {
@@ -60,10 +62,19 @@ public class SimpleCopyManager implements CopyManager {
 		
 		log.debug("Initialzing {} by calling {} '{}'", new Object[]{MappingFactory.class.getSimpleName(), Configurator.class.getSimpleName(), this.getConfigurator().toString()});
 		
+		if (this.hasOutputStream()) {
+			this.writeOutput(out, "Starting to query file queue. Number of entries: "+queue.size());
+		}
+		
 		while (!isStoped() && (file = queue.poll()) != null) {
 			try {
 				final Textfile textfile = new Textfile(file);
 				Source source;
+				
+				if (this.hasOutputStream()) {
+					this.writeOutput(out, "Took textfile '"+file.getAbsolutePath()+"'");
+				}
+				
 				while ((source = textfile.getNext()) != null) {
 					log.info("Taking next source of file '{}'", file.getName());
 					Task task = new Task(new CopyCommand(source, mappingFactory.getSourceDomainMapping(textfile, source)));
@@ -122,6 +133,38 @@ public class SimpleCopyManager implements CopyManager {
 	@Override
 	public MappingFactory getMappingFactory() {
 		return this.mappingFactory;
+	}
+
+	@Override
+	public boolean hasModule(Module<?> module) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void addModule(Module<?> module) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void removeModule(Module<?> module) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public void writeOutput(final PrintStream out, final String msg) {
+		out.println(msg);
+	}
+
+	public boolean hasOutputStream() {
+		return this.out != null;
+	}
+	
+	@Override
+	public void setOutputStream(PrintStream inputOut) {
+		if (inputOut == null) { throw new NullPointerException(); }
+		this.out = inputOut;
 	}
 
 }

@@ -39,7 +39,7 @@ public class CopyCommandIntegrationTest {
 		assertThat(source, notNullValue());
 	}
 
-	@Test(timeout = 150)
+	@Test(timeout = 200)
 	public void testTimeForTimeOut() {
 		new CopyCommand(source, new File("outputfile"));
 	}

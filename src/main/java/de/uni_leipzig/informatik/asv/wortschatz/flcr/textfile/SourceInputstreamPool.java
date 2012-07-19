@@ -25,10 +25,12 @@ public class SourceInputstreamPool extends SelectorPool<Source> {
 	public static final String SOURCE_START = "<source><location>";
 
 	private static final Logger log = LoggerFactory.getLogger(SourceInputstreamPool.class);
+
+	private static final int CAPACITY = 3;
 	
 	private final AtomicInteger sourceCounter = new AtomicInteger(0);
 
-	private final BlockingQueue<Source> queue = new LinkedBlockingQueue<Source>(3);
+	private final BlockingQueue<Source> queue = new LinkedBlockingQueue<Source>(CAPACITY);
 
 	private final ExecutorService service;
 
@@ -54,6 +56,8 @@ public class SourceInputstreamPool extends SelectorPool<Source> {
 		if (this.queue.size() <= 1) {
 			Thread.sleep(10);
 		}
+		
+		assert this.queue.size() <= CAPACITY;
 		
 		Source source = this.queue.poll(1, TimeUnit.SECONDS);
 
@@ -213,6 +217,9 @@ public class SourceInputstreamPool extends SelectorPool<Source> {
 				if (DEBUG_ENABLED)
 					log.debug(String.format("%s: publishing previous found source '%s' with a filled string buffer cache ('%d' signs).", instance_name, inputSource.toString(), inputSource.getContent().length()));
 				queue.put(inputSource);
+				
+				assert queue.size() <= CAPACITY;
+				
 			} catch (InterruptedException e) {
 				final String errorMsg = String.format("Publishing was interrupted while offering source '%s' to queue.", inputSource.toString());
 				log.error(errorMsg);

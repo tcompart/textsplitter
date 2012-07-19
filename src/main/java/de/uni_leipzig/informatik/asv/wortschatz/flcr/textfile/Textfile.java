@@ -63,10 +63,10 @@ public class Textfile {
 			throw new NullPointerException();
 		}
 		if (!file.exists()) {
-			throw new FileNotFoundException();
+			throw new FileNotFoundException(String.format("File %s not found", file.getAbsolutePath()));
 		}
-		if (!file.isFile()) {
-			throw new IllegalArgumentException();
+		if (!file.isFile() || !file.canRead()) {
+			throw new IllegalArgumentException(String.format("File %s is not readable or maybe no file?", file.getAbsolutePath()));
 		}
 
 		this.inputFile = file;
@@ -74,8 +74,7 @@ public class Textfile {
 		this.sourcePool = new SourceInputstreamPool(file);
 		this.textfile_name = file.getName();
 
-		sourceNumberFinder = new SourceNumberFinder(
-				file);
+		sourceNumberFinder = new SourceNumberFinder(file);
 		Executors.newSingleThreadExecutor().submit(sourceNumberFinder);
 		
 		log.info(String.format(
@@ -173,15 +172,17 @@ public class Textfile {
 			} else if (maybeOutputLanguage.isJust()) {
 				this.language = maybeOutputLanguage.getValue();
 			} else {
-				this.language = null;
+				this.language = "NO_LANGUAGE";
 				languageErrorOccurred = true;
 				log.warn("[{}]: unable to find language of this textfile, because the used file name pattern ('{}') did not match '{}'.", new Object[]{
 							this.getTextfileName(), inputFileNamePattern.toString(), outputFileNamePattern.toString()});
 			}
 
-			if (log.isInfoEnabled() && !languageErrorOccurred) {
+			if (!languageErrorOccurred) {
 				log.info("[{}]: initialized language value '{}'",
 						this.getTextfileName(), this.language);
+			} else {
+				log.warn("[{}]: language was not recognized. Language took value of '{}'", this.getTextfileName(), this.language);
 			}
 		}
 		return this.language;

@@ -45,14 +45,14 @@ public enum TextfileType {
 		return this.outputName;
 	}
 
-	public static TextfileType parse(final String name) {
+	public static TextfileType parse(final String name) throws IllegalArgumentException {
 		final String lowercaseName = name.toLowerCase();
 		final String shortenedForm = lowercaseName.substring(0, 2);
 
 		for (TextfileType type : TextfileType.values()) {
 			if (shortenedForm.equals(type.getShortForm()) || name.contains(type.getOutputName())) { return type; }
 		}
-		return null;
+		throw new IllegalArgumentException(String.format("Not recognizable %s: '%s'", TextfileType.class.getSimpleName(), name));
 	}
 
 }
