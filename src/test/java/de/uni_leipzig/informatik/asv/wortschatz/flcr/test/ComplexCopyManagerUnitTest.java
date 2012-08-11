@@ -7,11 +7,11 @@ import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashSet;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -85,6 +85,7 @@ public class ComplexCopyManagerUnitTest {
 		new ComplexCopyManager(null, null);
 	}
 
+	@Ignore
 	@Test(expected = IllegalArgumentException.class)
 	public void copyEmptyFileSet() throws FileNotFoundException {
 
