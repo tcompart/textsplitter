@@ -11,7 +11,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ClassPathResource;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Source;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
@@ -27,7 +27,7 @@ public class MappingFactoryIntegrationTest {
 
 	@BeforeClass
 	public static void setUpResources() throws IOException {
-		BIG_FILE = new FileSystemResource("Unigramm/FL_spa0000.txt").getFile();
+		BIG_FILE = new ClassPathResource("Unigramm/FL_spa0000.txt").getFile();
 		textfile = new Textfile(BIG_FILE);
 		source = textfile.getNext();
 	}

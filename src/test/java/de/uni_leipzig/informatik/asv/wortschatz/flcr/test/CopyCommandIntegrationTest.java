@@ -6,10 +6,9 @@ import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ClassPathResource;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.CopyCommand;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Source;
@@ -27,7 +26,7 @@ public class CopyCommandIntegrationTest {
 
 	@BeforeClass
 	public static void setUpResources() throws IOException {
-		BIG_FILE = new FileSystemResource("Unigramm/FL_spa0000.txt").getFile();
+		BIG_FILE = new ClassPathResource("Unigramm/FL_spa0000.txt").getFile();
 		textfile = new Textfile(BIG_FILE);
 		source = textfile.getNext();
 		mappedFile = mappingFactory.getSourceDomainMapping(textfile, source);
