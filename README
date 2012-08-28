@@ -2,3 +2,87 @@ textsplitter
 ============
 
 findlinks and webcrawl textsplitter
+
+============
+
+
+Short outline and plans for the future
+
+---------------Usage------------------
+
+
+java -jar executable.jar [HELP]|([OPTIONS] {INPUT})
+
+OPTIONS: [DEBUG] [VERBOSE] [STDOUT] [NO_THREADS] [NUMBER_OF_THREADS] [PROPERTIES] [OUTPUT]
+
+HELP:               -h || --help              : helpful information for each CLI option
+INPUT               -i || --input             : required option: file system path for the files, which should be copied
+DEBUG:              -d || --debug             : debug information level (prints only took CLI option, but does not start the copy manager)
+VERBOSE:            -v || --verbose           : verbose information level (INFO level)
+STDOUT:             -s || --stdout            : standard information level, but extra information written to standard output (command line)
+NO_THREADS:               --no-threads        : this disables a n-thread run, and therefore enables the SimpleCopyManager
+NUMBER_OF_THREADS:  -n || --numberOfThreads   : this is by default '1', but can be increased to any number. The number however defines the number of thread-pairs (Consumer-Producer pairs. Therefore 1 means already 2 threads running)
+PROPERTIES:         -p || --properties        : additional properties, which are loaded at last right before the application start
+OUTPUT:             -o || --output            : output directory which will be created if not already existing in which all files will be copied from the input directory
+
+Example:
+java -jar executable.jar -p application.properties -n 2 -o output -i input
+
+Supported properties through configuration files (currently only simple key-value configuration supported, XML support planned)
+Shown values are the default values yet.  
+
+  flcr.base.output=output
+    Output directory
+  
+  flcr.year=2012
+    A year information for copied files, which will be added to the resulting file name    
+
+  flcr.split.size=4000000
+    Split files after the set number of KBs (the size has to be in KBs! A small number will result in many many files)
+    Otherwise let this size be empty or set it to 0
+
+  flcr.split.configuration.name=languagedomain.conf
+    Textfiles can be splitted by a language domain configuration
+    Language domain configuration is organized in an unsorted language-TLD pairs following the schema: language.tld
+    Language means the short country or language code, which identifies the language of a textfile or source. TLD
+    means the very top level domain. Example: news.co.uk, TLD would be 'uk', news.de, TLD would be 'de'.
+    Full examples: deu.at deu.ch deu.cn
+    If no language domain configuration could be found, everything will be written as always. If a location could not be
+    filtered by the language domain configuration it will be written to the default standard output for the textfile and source
+
+
+-----------Description----------------
+
+Textsplitter should follow the MVC design.
+
+View:
+  ViewController: gives a small command line interface (View)
+
+Controller:
+  SimpleCopyController: single-threaded Controller (Produce-then-Consumer-then-Check)
+  ComplexCopyController: n-threaded Controller (Consumer-Producer with Check)
+
+Model:
+  Textfile
+  Source
+  Location
+
+and many utilities for Thread-Management and object factory patterns (selector pool). However, there are only few concepts, but 
+they are in different forms and shapes. 
+
+
+
+------------Plans---------------------
+
+There are not enough interfaces. The whole project has to be programmed against more interfaces. Especially the Module interface
+should be a first point for extensions. The producers and consumer logic should be done by configuration. The project should be
+configuration-driven. 
+
+TODO:
+1. identify concepts
+2. extract concepts in independent projects
+3. let MVC to be the rest of the whole project
+
+
+
+
