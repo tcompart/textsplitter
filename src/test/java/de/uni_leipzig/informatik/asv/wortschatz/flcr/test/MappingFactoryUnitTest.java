@@ -9,6 +9,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Properties;
 
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextFile;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Pair;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -16,10 +18,8 @@ import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
-import de.uni_leipzig.asv.clarin.common.tuple.Pair;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Source;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextfileType;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextFileType;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Configurator;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.MappingFactory;
 
@@ -27,7 +27,7 @@ public class MappingFactoryUnitTest {
 	
 	private static final String DIVISION_SIGN = MappingFactory.DEFAULT_DIVISION_SIGN;
 	private static File textfileFile;
-	private static Textfile textfile;
+	private static TextFile textFile;
 	private static Source source;
 	private static File tmpLanguageListFile;
 	private static Configurator configurator;
@@ -39,9 +39,9 @@ public class MappingFactoryUnitTest {
 		
 		textfileFile = classPathResource.getFile();
 		
-		textfile = new Textfile(textfileFile);
+		textFile = new TextFile(textfileFile);
 		
-		source = textfile.getNext();
+		source = textFile.getNext();
 		
 		tmpLanguageListFile = File.createTempFile("temporaryLanguageListFile", "_only_for_testing.txt");
 		
@@ -51,12 +51,12 @@ public class MappingFactoryUnitTest {
 		properties.put(Configurator.PROPERTY_LANGUAGE_LIST_NAME, tmpLanguageListFile.getAbsolutePath());
 		configurator = new Configurator(properties);
 		
-		assertThat(configurator.getTextfileLanguageListFileName(), is(tmpLanguageListFile.getAbsolutePath()));
+		assertThat(configurator.getTextFileLanguageListFileName(), is(tmpLanguageListFile.getAbsolutePath()));
 		
 		BufferedWriter writer = null;
 		try {
 			writer = new BufferedWriter(new FileWriter(tmpLanguageListFile));
-			writer.write(String.format("%s.%s", textfile.getLanguage(), source.getLocation().getDomain()));
+			writer.write(String.format("%s.%s", textFile.getLanguage(), source.getLocation().getDomain()));
 			writer.newLine();
 			writer.flush();
 		} finally {
@@ -69,9 +69,9 @@ public class MappingFactoryUnitTest {
 	@AfterClass
 	public static void tearDown() {
 		
-		textfile.release(source);
+		textFile.release(source);
 		source = null;
-		textfile = null;
+		textFile = null;
 		textfileFile = null;
 		
 		if (tmpLanguageListFile != null && tmpLanguageListFile.exists())
@@ -90,7 +90,7 @@ public class MappingFactoryUnitTest {
 		mf = new MappingFactory(configurator);		
 		mf.setDivisionSign(DIVISION_SIGN);
 		baseDirectory = configurator.getBaseOutputDirectory();
-		defaultBaseName = textfile.getLanguage() + DIVISION_SIGN + textfile.getOutputType().getOutputName();
+		defaultBaseName = textFile.getLanguage() + DIVISION_SIGN + textFile.getOutputType().getOutputName();
 		
 	}
 	
@@ -107,24 +107,24 @@ public class MappingFactoryUnitTest {
 	
 	@Test
 	public void testYearOfTextfile() {
-		final int possible_year = (textfile.getYear() != Textfile.DEFAULT_YEAR ? textfile.getYear() : configurator.getYear());
-		assertThat(mf.getYear(textfile), is(String.format("%s%s",DIVISION_SIGN,possible_year)));
+		final int possible_year = ( textFile.getYear() != TextFile.DEFAULT_YEAR ? textFile.getYear() : configurator.getYear());
+		assertThat(mf.getYear( textFile ), is(String.format("%s%s",DIVISION_SIGN,possible_year)));
 	}
 	
 	@Test
 	public void testTextfileOutputType() {
-		assertThat(mf.getTextfileType(textfile), is(textfile.getOutputType().getOutputName()));
+		assertThat(mf.getTextFileType( textFile ), is( textFile.getOutputType().getOutputName()));
 		
 		// assuming, that the MappingFactory uses this configurator;
-		for (TextfileType textfileType : TextfileType.values()) {
-			assertThat(mf.getDefaultOutputDirectory(textfileType), is(new File(baseDirectory, textfileType.toString())));
+		for (TextFileType textFileType : TextFileType.values()) {
+			assertThat(mf.getDefaultOutputDirectory( textFileType ), is(new File(baseDirectory, textFileType.toString())));
 		}
 	}
 	
 	@Test
 	public void testTextfileMapping() {
 		
-		assertThat(mf.getDefaultTextfileMapping(textfile), is(new File(baseDirectory + "/" + textfile.getOutputType().toString() + "/" + defaultBaseName, defaultBaseName + mf.getYear(textfile) + configurator.getDefaultFileExtension())));
+		assertThat(mf.getDefaultTextfileMapping( textFile ), is(new File(baseDirectory + "/" + textFile.getOutputType().toString() + "/" + defaultBaseName, defaultBaseName + mf.getYear( textFile ) + configurator.getDefaultFileExtension())));
 	}
 	
 	@Test
@@ -132,16 +132,16 @@ public class MappingFactoryUnitTest {
 		
 		final String sourceDomain = source.getLocation().getDomain();
 		
-		assertThat(mf.getLanguageFilter().apply(Pair.create(textfile.getLanguage(), sourceDomain)), is(true));
-		assertThat(configurator.getTextfileLanguageListFileName(), is(tmpLanguageListFile.getAbsolutePath()));
-		assertThat(new File(configurator.getTextfileLanguageListFileName()).exists(), is(true));
+		assertThat(mf.getLanguageFilter().apply( new Pair<String, String>( textFile.getLanguage(), sourceDomain )), is(true));
+		assertThat(configurator.getTextFileLanguageListFileName(), is(tmpLanguageListFile.getAbsolutePath()));
+		assertThat(new File(configurator.getTextFileLanguageListFileName()).exists(), is(true));
 		
-		assertThat(MappingFactory.pattern.matcher("deu_webfl_2012.txt").matches(), is(true));
-		assertThat(MappingFactory.pattern.matcher("spa_limited_webfl_2012_0000.txt").matches(), is(true));
+		assertThat(MappingFactory.PATTERN.matcher("deu_webfl_2012.txt").matches(), is(true));
+		assertThat(MappingFactory.PATTERN.matcher("spa_limited_webfl_2012_0000.txt").matches(), is(true));
 		
 		// the source has to be marked as a new mapping
-		assertThat(mf.isSupportedSourceLanguage(textfile, source), is(true)); // otherwise the next assertion will not work
-		assertThat(mf.getSourceDomainMapping(textfile, source), is(new File(baseDirectory + "/" + textfile.getOutputType().toString() + "/" + defaultBaseName, textfile.getLanguage() + DIVISION_SIGN + sourceDomain + DIVISION_SIGN + textfile.getOutputType().getOutputName() + mf.getYear(textfile) + configurator.getDefaultFileExtension())));
+		assertThat(mf.isSupportedSourceLanguage( textFile, source), is(true)); // otherwise the next assertion will not work
+		assertThat(mf.getSourceDomainMapping( textFile, source), is(new File(baseDirectory + "/" + textFile.getOutputType().toString() + "/" + defaultBaseName, textFile.getLanguage() + DIVISION_SIGN + sourceDomain + DIVISION_SIGN + textFile.getOutputType().getOutputName() + mf.getYear( textFile ) + configurator.getDefaultFileExtension())));
 		
 	}
 	

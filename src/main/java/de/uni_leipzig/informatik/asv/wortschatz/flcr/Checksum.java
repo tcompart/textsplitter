@@ -1,4 +1,4 @@
-package de.unileipzig.asv.wortschatz.flcr.util;
+package de.uni_leipzig.informatik.asv.wortschatz.flcr;
 
 import java.io.File;
 import java.io.FileInputStream;

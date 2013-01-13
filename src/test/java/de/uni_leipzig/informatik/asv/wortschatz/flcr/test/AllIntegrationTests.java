@@ -14,7 +14,7 @@ import org.junit.runners.Suite.SuiteClasses;
 	SelectorPoolIntegrationTest.class,
 //	SimpleCopyManagerIntegrationTest.class,
 	SourceInputstreamPoolIntegrationTest.class,
-	TextfileIntegrationTest.class,
+	TextFileIntegrationTest.class,
 	ViewControllerIntegrationTest.class
 })
 public class AllIntegrationTests {

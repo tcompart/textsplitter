@@ -15,9 +15,9 @@ import org.junit.runners.Suite.SuiteClasses;
 	SelectorPoolUnitTest.class,
 	SourceInputstreamPoolUnitTest.class,
 	SourceUnitTest.class,
-	TextfileLanguageFilterUnitTest.class,
+	TextFileLanguageFilterUnitTest.class,
 	TextfileParserUnitTest.class,
-	TextfileUnitTest.class,
+	TextFileUnitTest.class,
 	ThreadExecutorTest.class,
 	ThreadInterruptingTest.class
 })

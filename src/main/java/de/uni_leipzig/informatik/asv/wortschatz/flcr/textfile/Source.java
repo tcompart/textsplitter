@@ -61,7 +61,7 @@ public class Source {
 			this.language = this.source.substring(
 					this.source.indexOf(languageStart) + languageStart.length(), this.source.indexOf(languageEnd));
 			if (this.language == null || this.language.isEmpty() || this.language.equals("null")) {
-				this.language = Textfile.NO_LANGUAGE;
+				this.language = TextFile.NO_LANGUAGE;
 			}
 			
 			log.info("Found language '{}' of source '{}'", this.language, this.source);

@@ -2,6 +2,7 @@
 /bin
 /source
 /flcr
+/.idea
 *.class
 *.jar
 *.war

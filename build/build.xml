@@ -1,0 +1,369 @@
+<?xml version="1.0"?>
+<!DOCTYPE project>
+<project name="Brute force Build" default="build" basedir="../" xmlns:jacoco="antlib:org.jacoco.ant" xmlns:sonar="antlib:org.sonar.ant">
+	<!-- Create the time stamp -->
+	<tstamp/>
+
+	<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml" classpath="lib/build/jacocoant.jar"/>
+
+	<!-- load system properties -->
+	<property environment="ENV"/>
+
+	<!-- load property files and properties -->
+	<property file="project.properties"/>
+
+	<property name="version.properties" value="${src-resources.dir}/version.properties"/>
+	<property file="${version.properties}"/>
+	<property name="version">
+		${version.major}.${version.minor}.${version.revision}-${version.buildnr}
+	</property>
+
+	<property name="output.dir" value="${basedir}/${target.dir}"/>
+
+	<property name="lib.dir" value="${basedir}/lib/runtime"/>
+	<property name="test-lib.dir" value="${basedir}/lib/test"/>
+	<property name="build-lib.dir" value="${basedir}/lib/build"/>
+
+	<property name="class.dir" value="${output.dir}/classes"/>
+	<property name="test-class.dir" value="${output.dir}/test-classes"/>
+
+	<property name="test-report.dir" value="${output.dir}/tests"/>
+	<property name="coverage.dir" value="${output.dir}/code-coverage"/>
+
+
+	<!-- sonar variable properties -->
+	<property name="sonar.verbose" value="true"/>
+
+	<property name="sonar.projectVersion" value="${version.major}.${version.minor}.${version.revision}-${version.buildnr}"/>
+	<property name="sonar.projectName" value="${projectName}"/>
+	<property name="sonar.projectKey" value="de.compart:${projectName}"/>
+
+
+	<property name="sonar.sources" value="${basedir}/${src.dir}"/>
+	<property name="sonar.binaries" value="${class.dir},${test-class.dir}"/>
+	<property name="sonar.tests" value="${basedir}/${src-test.dir}"/>
+
+	<property name="sonar.java.coveragePlugin" value="jacoco"/>
+	<property name="sonar.dynamicAnalysis" value="reuseReports"/>
+	<property name="sonar.surefire.reportsPath" value="${test-report.dir}"/>
+
+	<property name="sonar.jacoco.reportPath" value="${coverage.dir}/jacoco_ut.exec"/>
+	<property name="sonar.jacoco.itReportPath" value="${coverage.dir}/jacoco_it.exec"/>
+
+	<path id="build.class.path">
+		<fileset dir="${build-lib.dir}" includes="*.jar"/>
+	</path>
+
+	<path id="production.class.path">
+		<fileset dir="${lib.dir}" includes="*.jar"/>
+	</path>
+
+	<path id="test.class.path">
+		<fileset dir="${test-lib.dir}" includes="*.jar"/>
+	</path>
+
+	<!-- Test for Ant Version Delete this task and all instances of overwrite='no' if you can't upgrade to latest-->
+	<fail message="All features of the build script require Ant version 1.8.4 or greater (yours: ${ant.version}). Please upgrade to the latest version or remove all instances of 'overwrite=no' (and this fail task) from the build script to continue">
+		<condition>
+			<not>
+				<antversion atleast="1.8.4"/>
+			</not>
+		</condition>
+	</fail>
+
+	<!--
+	********
+	**
+	**  PRIVATE TARGETS
+	**
+	********
+	-->
+
+	<target name="-check-output" description="checking if a output directory is available and valid">
+		<condition property="output.available">
+			<available file="${output.dir}" type="dir"/>
+		</condition>
+
+		<condition property="output.directory.valid">
+			<not>
+				<or>
+					<equals arg1="${output.dir}" arg2="."/>
+					<equals arg1="${output.dir}" arg2=".."/>
+					<equals arg1="${output.dir}" arg2="/"/>
+					<equals arg1="${output.dir}" arg2="./"/>
+					<equals arg1="${output.dir}" arg2="../"/>
+					<equals arg1="${output.dir}" arg2="./build"/>
+				</or>
+			</not>
+		</condition>
+	</target>
+
+	<target name="-check-clean-valid" depends="-check-output" unless="output.directory.valid">
+		<fail message="You are about to loose a lot of data by deleting directory: ${output.dir}"/>
+	</target>
+
+	<target name="-check-output-available" depends="-check-output"
+			description="Gives output if the directory does not exists" unless="output.available">
+		<echo level="warning" message="Unable to delete directory (does not exist): ${output.dir}"/>
+	</target>
+
+	<target name="-check-src-directories">
+		<condition property="src-production-exists">
+			<available file="${src.dir}" type="dir"/>
+		</condition>
+		<condition property="src-test-exists">
+			<available file="${src-test.dir}" type="dir"/>
+		</condition>
+	</target>
+
+	<target name="-dist" depends="compile" description="(PRIVATE) create jar for deployment">
+		<!-- Create the distribution directory -->
+		<mkdir dir="${dist.dir}/lib"/>
+		<echo message="Building JAR of project ${ant.project.name}: ${DSTAMP}"/>
+		<antcall target="buildnr" />
+		<property file="${version.properties}" />
+		<property name="new_version" value="${version.major}.${version.minor}.${version.revision}-${version.buildnr}" />
+		<jar jarfile="${dist.dir}/${ant.project.name}-${new_version}.jar"/>
+
+	</target>
+
+	<target name="-check-connection" description="checking all connections">
+		<condition property="has-connection">
+			<and>
+				<http url="http://google.com"/>
+				<http url="http://apple.com"/>
+				<http url="http://apfeltalk.de"/>
+				<http url="http://localhost:8080/"/>
+			</and>
+		</condition>
+	</target>
+
+	<target name="-fail-connection" depends="-check-connection" unless="has-connection"
+			description="check if anyt connection failed">
+		<fail>no connection</fail>
+	</target>
+
+	<target name="-connection" depends="-fail-connection" if="has-connection" description="starting connection test">
+		<echo>I was able to connect</echo>
+	</target>
+
+	<!--
+	********
+	**
+	**  BASE TARGETS
+	**
+	********
+	-->
+
+	<target name="check-setup" description="Prints variables in a kind of dry-run mode">
+		<echo>
+			Properties:
+			base directory = ${basedir}
+
+			Output directory:
+			$${output.dir} = ${output.dir}
+
+			Library directories:
+			$${lib.dir} = ${lib.dir}
+			$${build-lib.dir} = ${build-lib.dir}
+
+			Binary directories:
+			$${class.dir} = ${class.dir}
+			$${test-class.dir} = ${test-class.dir}
+
+			Report directories:
+			$${test-report.dir} = ${test-report.dir}
+			$${coverage.dir} = ${coverage.dir}
+
+			Sonar properties:
+
+			$${sonar.projectKey}=${sonar.projectKey}
+			$${sonar.projectName}=${sonar.projectName}
+			$${sonar.projectVersion}=${sonar.projectVersion}
+
+			$${sonar.jdbc.username}=${sonar.jdbc.username}
+			$${sonar.jdbc.password}=${sonar.jdbc.password}
+			$${sonar.jdbc.url}=${sonar.jdbc.url}
+
+			$${sonar.surefire.reportsPath}=${sonar.surefire.reportsPath}
+			$${sonar.binaries}=${sonar.binaries}
+			$${sonar.tests}=${sonar.tests}
+			$${sonar.sources}=${sonar.sources}
+			$${sonar.jacoco.reportPath}=${sonar.jacoco.reportPath}
+			$${sonar.jacoco.itReportPath}=${sonar.jacoco.itReportPath}
+
+
+		</echo>
+	</target>
+
+	<target name="clean" depends="-check-output-available, -check-clean-valid" if="output.available"
+			description="(PUBLIC) remove output directory">
+		<delete dir="${output.dir}"/>
+	</target>
+
+	<target name="init" description="(PUBLIC) create output directory if not already existing">
+		<!-- Create the build directory structure used by compile -->
+		<echo level="debug" message="Creating output directory"/>
+		<mkdir dir="${output.dir}"/>
+	</target>
+
+	<target name="compile-production" depends="-check-src-directories" if="src-production-exists"
+			description="(PUBLIC) compile the source code of the production code">
+		<mkdir dir="${class.dir}"/>
+		<javac includeantruntime="false" fork="yes" source="1.6" target="1.6" srcdir="${src.dir}" debug="yes"
+			   destdir="${class.dir}">
+			<classpath refid="production.class.path"/>
+			<classpath>
+				<fileset dir="${build-lib.dir}" includes="annotations.jar"/>
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="compile-tests" depends="-check-src-directories" if="src-test-exists"
+			description="(PUBLIC) compile the source code of the test code">
+		<mkdir dir="${test-class.dir}"/>
+		<javac includeantruntime="false" fork="yes" source="1.6" target="1.6" srcdir="${src-test.dir}" debug="yes"
+			   destdir="${test-class.dir}">
+			<classpath path="${class.dir}"/>
+			<classpath refid="test.class.path"/>
+			<classpath>
+				<fileset dir="${build-lib.dir}" includes="annotations.jar"/>
+			</classpath>
+			<classpath refid="production.class.path"/>
+		</javac>
+	</target>
+
+	<target name="compile" depends="compile-production, compile-tests" description="(PUBLIC) compile the source code">
+		<echo>**** CODE COMPILED SUCCESSFULLY ****</echo>
+	</target>
+
+	<target name="unit-test" depends="clean, compile" description="(PUBLIC) unit test source code">
+		<mkdir dir="${test-report.dir}"/>
+		<mkdir dir="${coverage.dir}"/>
+
+		<taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask">
+			<classpath>
+				<path refid="test.class.path"/>
+			</classpath>
+		</taskdef>
+
+		<!-- Import the JaCoCo Ant Task -->
+		<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml">
+			<classpath>
+				<fileset dir="${build-lib.dir}" includes="jacocoant.jar"/>
+			</classpath>
+		</taskdef>
+
+		<jacoco:coverage dumponexit="true" append="false" destfile="${coverage.dir}/jacoco_ut.exec">
+			<junit fork="true" forkmode="once" includeantruntime="true" dir="${basedir}" haltonerror="no" haltonfailure="no" failureProperty="tests.failed"
+				   errorproperty="tests.error">
+				<classpath>
+					<path refid="test.class.path"/>
+					<path refid="production.class.path" />
+					<pathelement location="${class.dir}" />
+					<pathelement location="${test-class.dir}" />
+				</classpath>
+				<batchtest fork="yes" todir="${test-report.dir}">
+					<fileset dir="${test-class.dir}" includes="**/*Test.class"/>
+				</batchtest>
+				<formatter type="xml"/>
+			</junit>
+		</jacoco:coverage>
+
+		<condition property="test-failure-or-error">
+			<or>
+				<isset property="tests.failed"/>
+				<isset property="tests.error"/>
+			</or>
+		</condition>
+	</target>
+
+	<target name="build" depends="clean, init, compile, unit-test"
+			description="(PUBLIC) build and unit test application" if="test-failure-or-error">
+		<echo message="At least one test failed or produced an error"/>
+	</target>
+
+	<target name="deploy" depends="build, -dist" description="(PUBLIC) deploy application"/>
+
+	<target name="-check-run" description="(PUBLIC) run the java application">
+		<property name="build.jar" value="${dist.dir}/${ant.project.name}-${new_version}.jar"/>
+		<condition property="build.jar.exists">
+			<available file="${build.jar}" type="file"/>
+		</condition>
+	</target>
+
+	<target name="-fail-check-run" description="(PRIVATE) fail if the executable does not exists"
+			unless="build.jar.exists">
+		<fail message="Executable does not exist: ${build.jar}"/>
+	</target>
+
+	<target name="run" depends="-check-run, -fail-check-run" if="build.jar.exists">
+		<echo message="Executing java executable: ${build.jar}"/>
+		<jacoco:coverage dumponexit="true" destfile="target/code-coverage/jacoco_it.exec">
+			<java classname="de.compart.app.bruteforce.BruteforceLauncher" fork="true" failonerror="true">
+				<classpath path="${class.dir}"/>
+			</java>
+		</jacoco:coverage>
+	</target>
+
+	<target name="-check-sonar-properties">
+		<property name="sonar.user.properties" value="${ENV.SONAR_USER_PROPERTIES}"/>
+		<condition property="sonar.properties.exist">
+			<available file="${sonar.user.properties}" type="file"/>
+		</condition>
+	</target>
+
+	<target name="code-coverage" depends="-check-sonar-properties, deploy, run"
+			description="(PUBLIC) collection code coverage data" if="sonar.properties.exist">
+		<property file="${sonar.user.properties}"/>
+
+		<taskdef uri="antlib:org.sonar.ant" resource="org/sonar/ant/antlib.xml">
+			<classpath>
+				<pathelement location="lib/build/sonar-ant-task-2.0.jar"/>
+			</classpath>
+		</taskdef>
+
+		<sonar:sonar key="${sonar.projectKey}:${projectName}" version="${version}">
+			<sonar:libraries>
+				<path refid="production.class.path"/>
+				<path refid="test.class.path"/>
+				<path refid="build.class.path"/>
+			</sonar:libraries>
+		</sonar:sonar>
+	</target>
+
+	<target name="buildnr">
+		<propertyfile  file="${version.properties}">
+			<entry key="version.buildnr" type="int" operation="+" value="1" pattern="0000" />
+		</propertyfile>
+	</target>
+
+	<target name="revision">
+		<propertyfile  file="${version.properties}">
+			<entry key="version.revision" type="int" operation="+" value="1" />
+			<entry key="version.buildnr" type="int" value="1" pattern="0000" />
+		</propertyfile>
+	</target>
+
+	<target name="minor">
+		<propertyfile  file="${version.properties}">
+			<entry key="version.minor" type="int" operation="+" value="1" />
+			<entry key="version.revision" type="int" value="0" />
+			<entry key="version.buildnr" type="int" value="1" pattern="0000" />
+		</propertyfile>
+	</target>
+
+	<target name="major">
+		<propertyfile  file="${version.properties}">
+			<entry key="version.major" type="int" operation="+" value="1"/>
+			<entry key="version.minor" type="int" value="0"/>
+			<entry key="version.revision" type="int" value="0" />
+			<entry key="version.buildnr" type="int" value="1" pattern="0000" />
+		</propertyfile>
+	</target>
+
+	<target name="all" depends="code-coverage">
+		<echo message="Finished successfully another code analysis run."/>
+	</target>
+
+</project>

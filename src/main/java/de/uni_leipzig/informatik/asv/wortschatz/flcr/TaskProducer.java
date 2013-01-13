@@ -7,12 +7,12 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.task.Task;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Source;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.MappingFactory;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReachedEndException;
 
@@ -65,23 +65,23 @@ public class TaskProducer implements Runnable, Stoppable {
 					}
 					
 					// 3. PRODUCE TEXTFILE
-					Textfile textfile = new Textfile(file);
+					TextFile textFile = new TextFile(file);
 					
 					if (this.hasOutputStream()) {
-						this.writeOutput(out, "Took textfile '"+file.getAbsolutePath()+"'");
+						this.writeOutput(out, "Took textFile '"+file.getAbsolutePath()+"'");
 					}
 					
 					Source source = null;
 					try {
 						// 4. FOR EVERY SOURCE OF TEXTFILE
-						while ((source = textfile.getNext()) != null) {
-							log.info("[{}]: Producing next task (Textfile '{}') of source '{}'", new Object[]{ this.getInstanceName(), textfile.getTextfileName(), source });
+						while ((source = textFile.getNext()) != null) {
+							log.info("[{}]: Producing next task (TextFile '{}') of source '{}'", new Object[]{ this.getInstanceName(), textFile.getTextFileName(), source });
 							
 							if (this.hasOutputStream()) {
-								this.writeOutput(out, "Working on textfile '"+file.getAbsolutePath()+"' with source '"+source.toString()+"'");
+								this.writeOutput(out, "Working on textFile '"+file.getAbsolutePath()+"' with source '"+source.toString()+"'");
 							}
 							
-							Task task = new Task(new CopyCommand(source, mappingFactory.getSourceDomainMapping(textfile, source)));
+							Task task = new Task(new CopyCommand(source, mappingFactory.getSourceDomainMapping( textFile, source)));
 							
 							// 5. OFFER TASK TO QUEUE
 							while (!this.outputQueue.offer(task)) {

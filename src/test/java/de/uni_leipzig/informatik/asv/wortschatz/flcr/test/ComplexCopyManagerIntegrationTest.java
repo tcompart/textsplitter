@@ -1,41 +1,30 @@
 package de.uni_leipzig.informatik.asv.wortschatz.flcr.test;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import com.google.common.base.Predicate;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.ComplexCopyManager;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.*;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Configurator;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Pair;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Predicate;
-
-import de.uni_leipzig.asv.clarin.common.tuple.Pair;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.ComplexCopyManager;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Location;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Source;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.SourceInputstreamPool;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextfileType;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Configurator;
+import java.io.*;
+import java.net.URL;
+import java.util.Hashtable;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 public class ComplexCopyManagerIntegrationTest extends ComplexCopyManagerUnitTest {
 
 	private static final Logger log = LoggerFactory.getLogger(ComplexCopyManagerIntegrationTest.class);
-	
+
+	@Ignore
 	@Test
 	public void copyFullFileSet() throws IOException, InterruptedException, ExecutionException {
 		this.create();
@@ -52,9 +41,9 @@ public class ComplexCopyManagerIntegrationTest extends ComplexCopyManagerUnitTes
 		assertThat(controller.isRunning(), is(false));
 		assertThat(controller.isStoped(), is(true));
 		
-		final Textfile textfile = new Textfile(textfileFile);
+		final TextFile textFile = new TextFile(textfileFile);
 
-		final File resultingTextfile = factory.getDefaultTextfileMapping(textfile);
+		final File resultingTextfile = factory.getDefaultTextfileMapping( textFile );
 		
 		while (!resultingTextfile.exists()) {
 			synchronized (this) {
@@ -63,18 +52,18 @@ public class ComplexCopyManagerIntegrationTest extends ComplexCopyManagerUnitTes
 		}
 		
 		assertThat(resultingTextfile.exists(), is(true));
-		Textfile textfileToBeCompared = new Textfile(resultingTextfile);
+		TextFile textFileToBeCompared = new TextFile(resultingTextfile);
 		
-		// waiting until the textfile, which should be compared reaches the maximum number of sources
+		// waiting until the textFile, which should be compared reaches the maximum number of sources
 		synchronized (this) {
 			this.wait(100); 
 		}
 		
-		assertSame(resultingTextfile.getAbsolutePath(), textfile, textfileToBeCompared);
+		assertSame(resultingTextfile.getAbsolutePath(), textFile, textFileToBeCompared );
 
 	}
 
-	private static void assertSame(final String errorMsg, final Textfile inputOriginal, final Textfile inputChanged)
+	private static void assertSame(final String errorMsg, final TextFile inputOriginal, final TextFile inputChanged)
 			throws FileNotFoundException {
 		assertThat(inputOriginal, notNullValue());
 		assertThat(inputChanged, notNullValue());
@@ -105,9 +94,10 @@ public class ComplexCopyManagerIntegrationTest extends ComplexCopyManagerUnitTes
 		assertThat(inputSource.getLocation(), is(sourceToBeCompared.getLocation()));
 		assertThat(inputSource.getContent().toString(), is(sourceToBeCompared.getContent().toString()));
 	}
-	
+
+	@Ignore
 	@Test
-	public void splittFullFileSet() throws IOException, InterruptedException, ExecutionException {
+	public void splitFullFileSet() throws IOException, InterruptedException, ExecutionException {
 
 		this.create();
 		
@@ -127,20 +117,20 @@ public class ComplexCopyManagerIntegrationTest extends ComplexCopyManagerUnitTes
 			
 			@Override
 			public boolean apply(final Pair<String, String> languageDomainPairToBeTested) {
-				log.info(String.format("Applying this filter to language domain pair: (language: '%s', domain: '%s')",languageDomainPairToBeTested.first(), languageDomainPairToBeTested.second()));
+				log.info("Applying this filter to language domain pair: (language: '%s', domain: '%s')", languageDomainPairToBeTested.getFirst(), languageDomainPairToBeTested.getSecond());
 				return languageDomainPairToBeTested != null && 
 						(
-						languageDomainPairToBeTested.first().equalsIgnoreCase(LANGUAGE) ||
-						languageDomainPairToBeTested.first().equalsIgnoreCase(NO_LANGUAGE) 
+						languageDomainPairToBeTested.getFirst().equalsIgnoreCase(LANGUAGE) ||
+						languageDomainPairToBeTested.getFirst().equalsIgnoreCase( NO_LANGUAGE )
 						) && 
-						languageDomainPairToBeTested.second().equalsIgnoreCase(DOMAIN);
+						languageDomainPairToBeTested.getSecond().equalsIgnoreCase( DOMAIN );
 			}
 		};
 		
 		// initialize the instances for copying
 		ComplexCopyManager controller = new ComplexCopyManager(textfileFile.getParentFile(), new Configurator());
 		// debug testing by injecting a pre-declared language filter: allows only SPA:BO to be split
-		controller.getMappingFactory().setLanuageFilter(languageSourceDomainFilter);
+		controller.getMappingFactory().setLanguageFilter( languageSourceDomainFilter );
 		
 		// start copying, and wait until the results were written
 		controller.start();
@@ -153,7 +143,7 @@ public class ComplexCopyManagerIntegrationTest extends ComplexCopyManagerUnitTes
 		 * 
 		 * 
 		 */
-		final File outputDirectory = controller.getMappingFactory().getDefaultOutputDirectory(TextfileType.Findlinks);
+		final File outputDirectory = controller.getMappingFactory().getDefaultOutputDirectory( TextFileType.Findlinks);
 		assertThat(outputDirectory.exists(), is(true));
 		assertThat(outputDirectory.isDirectory(), is(true));
 		
@@ -190,14 +180,14 @@ public class ComplexCopyManagerIntegrationTest extends ComplexCopyManagerUnitTes
 		// default textfile and spa_bo textfile
 		assertThat(defaultOutputDirectory.getAbsolutePath(),defaultOutputDirectory.listFiles().length, is(2));
 		
-		final Textfile defaultOutputTextfile = new Textfile(defaultOutputDirectory.listFiles()[1]);
-		final Textfile default_spa_bo_Textfile = new Textfile(defaultOutputDirectory.listFiles()[0]);
+		final TextFile defaultOutputTextFile = new TextFile(defaultOutputDirectory.listFiles()[1]);
+		final TextFile default_spa_bo_TextFile = new TextFile(defaultOutputDirectory.listFiles()[0]);
 		
-		// sleep after all the Textfile got calculated
+		// sleep after all the TextFile got calculated
 		Thread.sleep(100);
 		
-		assertThat(defaultOutputDirectory.listFiles()[0].getAbsolutePath(),default_spa_bo_Textfile.getNumberOfSources(), is(numberOf_SPA_BO_sources));
-		assertThat(defaultOutputDirectory.listFiles()[1].getAbsolutePath(),defaultOutputTextfile.getNumberOfSources() + numberOf_SPA_BO_sources, is (49));
+		assertThat(defaultOutputDirectory.listFiles()[0].getAbsolutePath(), default_spa_bo_TextFile.getNumberOfSources(), is(numberOf_SPA_BO_sources));
+		assertThat(defaultOutputDirectory.listFiles()[1].getAbsolutePath(), defaultOutputTextFile.getNumberOfSources() + numberOf_SPA_BO_sources, is (49));
 		
 	}
 

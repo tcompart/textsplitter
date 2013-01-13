@@ -15,13 +15,13 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextFile;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextFileType;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextfileType;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReachedEndException;
 
 public class TextfileParserUnitTest {
@@ -59,39 +59,39 @@ public class TextfileParserUnitTest {
 
 	}
 
-	private Textfile textfile;
+	private TextFile textFile;
 
 	@Before
 	public void setUp() throws IOException {
-		textfile = new Textfile(file);
+		textFile = new TextFile(file);
 	}
 
 	@Test
 	public void create() throws FileNotFoundException, ReachedEndException {
-		assertThat(textfile, notNullValue());
-		assertThat(textfile.getFile(), is(file));
-		assertThat(textfile.getOutputType(), is(TextfileType.Findlinks));
-		assertThat(textfile.getNext(), notNullValue());
-		assertThat(textfile.getLanguage(), notNullValue());
+		assertThat( textFile, notNullValue());
+		assertThat( textFile.getFile(), is(file));
+		assertThat( textFile.getOutputType(), is( TextFileType.Findlinks));
+		assertThat( textFile.getNext(), notNullValue());
+		assertThat( textFile.getLanguage(), notNullValue());
 	}
 
 	@Test(expected = ReachedEndException.class)
 	public void testNumberOfSources() throws ReachedEndException {
 		for (int i = 0; i < numberOfSources; i++) {
 			try {
-				assertThat(textfile.getNext(), notNullValue());
+				assertThat( textFile.getNext(), notNullValue());
 			} catch (ReachedEndException ex) {
 				fail("Here an exception should not be thrown. Therefore the end should not be signaled while requesting all available objects.");
 			}
 		}
 		// here an exception should be thrown
-		assertThat(textfile.getNext(), nullValue());
+		assertThat( textFile.getNext(), nullValue());
 	}
 
 	@Test
 	public void getLanguage() {
-		assertThat(textfile.getLanguage(), notNullValue());
-		assertThat(textfile.getLanguage(), is("spa_limited"));
+		assertThat( textFile.getLanguage(), notNullValue());
+		assertThat( textFile.getLanguage(), is("spa_limited"));
 	}
 
 	@Test
@@ -100,18 +100,18 @@ public class TextfileParserUnitTest {
 		// bigger number, because of small free memory number
 		Long memoryBefore = runtime.maxMemory() - runtime.freeMemory();
 
-		textfile.release();
+		textFile.release();
 
-		assertThat(textfile, notNullValue());
+		assertThat( textFile, notNullValue());
 		try {
-			assertThat(textfile.getFile(), nullValue());
+			assertThat( textFile.getFile(), nullValue());
 			fail("The internal file was released, and atleast the reference should be gone.");
 		} catch (FileNotFoundException e) {
 			assertThat(e, notNullValue());
 		}
-		assertThat(textfile.getOutputType(), nullValue());
+		assertThat( textFile.getOutputType(), nullValue());
 		try {
-			assertThat(textfile.getNext(), nullValue());
+			assertThat( textFile.getNext(), nullValue());
 			fail("An exception should have be thrown, because the text file and its references were released from memory.");
 		} catch (ReachedEndException ex) {
 			assertThat(ex, notNullValue());

@@ -3,13 +3,13 @@ package de.uni_leipzig.informatik.asv.wortschatz.flcr;
 import java.io.PrintStream;
 import java.util.regex.Pattern;
 
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextFile;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Configurator;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.MappingFactory;
 
 public interface CopyManager {
 
-	public static final Pattern fileNamePattern = Textfile.inputFileNamePattern;
+	public static final Pattern fileNamePattern = TextFile.inputFileNamePattern;
 
 	void start();
 

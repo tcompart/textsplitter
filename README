@@ -5,11 +5,9 @@ findlinks and webcrawl textsplitter
 
 ============
 
-
 Short outline and plans for the future
 
 ---------------Usage------------------
-
 
 java -jar executable.jar [HELP]|([OPTIONS] {INPUT})
 
@@ -44,11 +42,11 @@ Shown values are the default values yet.
   flcr.split.configuration.name=languagedomain.conf
     Textfiles can be splitted by a language domain configuration
     Language domain configuration is organized in an unsorted language-TLD pairs following the schema: language.tld
-    Language means the short country or language code, which identifies the language of a textfile or source. TLD
+    Language means the short country or language code, which identifies the language of a textFile or source. TLD
     means the very top level domain. Example: news.co.uk, TLD would be 'uk', news.de, TLD would be 'de'.
     Full examples: deu.at deu.ch deu.cn
     If no language domain configuration could be found, everything will be written as always. If a location could not be
-    filtered by the language domain configuration it will be written to the default standard output for the textfile and source
+    filtered by the language domain configuration it will be written to the default standard output for the textFile and source
 
 
 -----------Description----------------

@@ -6,10 +6,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 
+import de.compart.common.Maybe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_leipzig.asv.clarin.common.tuple.Maybe;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.task.Command;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Source;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReserverUtil;
@@ -44,7 +44,7 @@ public class CopyCommand implements Command {
 				}
 				continue;
 			}
-			temporaryFile = maybeReservedFile.getValue();
+			temporaryFile = maybeReservedFile.get();
 		}
 
 		final File outputfile = temporaryFile;
@@ -118,7 +118,8 @@ public class CopyCommand implements Command {
 			throw new NullPointerException();
 		}
 		if (!inputFile.exists() && !inputFile.getParentFile().exists()) {
-			inputFile.getParentFile().mkdirs();
+			inputFile.getParentFile();
+			inputFile.mkdirs();
 		}
 		return inputFile.getParentFile().exists()
 				&& inputFile.getParentFile().isDirectory();

@@ -41,7 +41,7 @@ public class IOUtil {
 	}
 	
 
-	public static File createFile(File directory, String fileName) throws IOException {
+	public static File createFile(final File directory, final String fileName) throws IOException {
 		if (directory.exists()) {
 			File file = new File(directory, fileName);
 			file.createNewFile();
@@ -50,7 +50,7 @@ public class IOUtil {
 		throw new IOException(directory.getAbsoluteFile()+" does not exist. Unable to create a file in the directory.");
 	}	
 	
-	public static boolean removeDirectory(File directory) {
+	public static boolean removeDirectory(final File directory) {
 		boolean flag = true;
 		if (directory.exists() && directory.isDirectory()) {
 			for (File file : directory.listFiles()) {
@@ -65,7 +65,7 @@ public class IOUtil {
 		return flag;
 	}
 	
-	public static boolean removeFile(File file) {
+	public static boolean removeFile(final File file) {
 		return (file != null && file.delete());
 	}
 	

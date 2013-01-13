@@ -78,7 +78,7 @@ public class ConfigurationPatternIOUtil {
 						}
 						
 					} else if (!trimmedString.isEmpty()) {
-						log.warn("String '{}' did not match the pattern '{}'. If this is not expected, please change the content of the property file, or fix the implementation.", trimmedString, pattern.toString());
+						log.warn("String '{}' did not match the PATTERN '{}'. If this is not expected, please change the content of the property file, or fix the implementation.", trimmedString, pattern.toString());
 					}
 				}
 			}

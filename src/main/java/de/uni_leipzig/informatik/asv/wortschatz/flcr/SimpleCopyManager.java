@@ -5,16 +5,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.task.Task;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Source;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Configurator;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.IOUtil;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.MappingFactory;
@@ -25,7 +25,7 @@ public class SimpleCopyManager implements CopyManager {
 	private static final Logger log = LoggerFactory.getLogger(SimpleCopyManager.class);
 	private static final AtomicInteger instanceCount = new AtomicInteger(0);
 	
-	private final Queue<File> queue;
+	private final BlockingQueue<File> queue;
 	private final MappingFactory mappingFactory;
 
 	private final String instanceName;
@@ -48,6 +48,10 @@ public class SimpleCopyManager implements CopyManager {
 	private volatile boolean success = true;
 	private PrintStream out;
 
+	public BlockingQueue<File> getFileQueue() {
+		return this.queue;
+	}
+
 	@Override
 	public void start() {
 		
@@ -60,39 +64,44 @@ public class SimpleCopyManager implements CopyManager {
 		
 		File file;
 		
-		log.debug("Initialzing {} by calling {} '{}'", new Object[]{MappingFactory.class.getSimpleName(), Configurator.class.getSimpleName(), this.getConfigurator().toString()});
+		log.debug("Initializing {} by calling {} '{}'", new Object[]{MappingFactory.class.getSimpleName(), Configurator.class.getSimpleName(), this.getConfigurator().toString()});
 		
 		if (this.hasOutputStream()) {
-			this.writeOutput(out, "Starting to query file queue. Number of entries: "+queue.size());
+			this.writeOutput(out, "Starting to query file queue. Number of entries: "+this.getFileQueue().size());
 		}
 		
-		while (!isStoped() && (file = queue.poll()) != null) {
+		while (!isStoped()) {
+			file = this.getFileQueue().poll();
 			try {
-				final Textfile textfile = new Textfile(file);
+				long textFileTime = System.nanoTime();
+				final TextFile textFile = new TextFile(file);
+				System.out.println(String.format("Required: '%d' ns for creating textFile", System.nanoTime()-textFileTime));
 				Source source;
 				
 				if (this.hasOutputStream()) {
-					this.writeOutput(out, "Took textfile '"+file.getAbsolutePath()+"'");
+					this.writeOutput(out, "Took textFile '"+file.getAbsolutePath()+"'");
 				}
-				
-				while ((source = textfile.getNext()) != null) {
+
+
+				while ((source = textFile.getNext()) != null) {
 					log.info("Taking next source of file '{}'", file.getName());
 					
 					if (this.hasOutputStream()) {
-						this.writeOutput(out, "Working on textfile '"+file.getAbsolutePath()+"' with source '"+source.toString()+"'");
+						this.writeOutput(out, "Working on textFile '"+file.getAbsolutePath()+"' with source '"+source.toString()+"'");
 					}
-					
-					Task task = new Task(new CopyCommand(source, mappingFactory.getSourceDomainMapping(textfile, source)));
+
+					long time = System.nanoTime();
+					Task task = new Task(new CopyCommand(source, mappingFactory.getSourceDomainMapping( textFile, source)));
 					log.info("Creating next task '{}'", task.getUniqueIdentifier());
 					task.doTask();
 					log.info("Finished task '{}", task.getUniqueIdentifier());
+					System.out.println(String.format("Required: %d ns", System.nanoTime()-time));
 				}
 			} catch (ReachedEndException ex) {
-				log.info("Finished Textfile instance of file '{}'. Proceeding with next file if present.", file.getName());
+				log.info("Finished TextFile instance of file '{}'. Proceeding with next file if present.", file.getName());
 			} catch (IOException ex) {
-				log.error("Textfile instance could not be loaded because of file '{}'", file.getName());
-			} 
-			
+				log.error("TextFile instance could not be loaded because of file '{}'", file.getName());
+			}
 		}
 		
 		if (queue.isEmpty()) {

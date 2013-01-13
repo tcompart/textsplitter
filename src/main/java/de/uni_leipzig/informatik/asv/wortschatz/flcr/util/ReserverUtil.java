@@ -1,13 +1,12 @@
 package de.uni_leipzig.informatik.asv.wortschatz.flcr.util;
 
-import java.io.File;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
+import de.compart.common.Maybe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.uni_leipzig.asv.clarin.common.tuple.Maybe;
+import java.io.File;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class ReserverUtil {
 	

@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextFileType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -17,7 +18,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.ComplexCopyManager;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextfileType;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.Configurator;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.IOUtil;
 import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.MappingFactory;
@@ -26,7 +26,7 @@ public class ComplexCopyManagerUnitTest {
 
 	protected static File textfileFile;
 
-	protected static final MappingFactory factory = new MappingFactory(Configurator.getConfiguration());
+	protected static final MappingFactory factory = new MappingFactory(Configurator.getGlobalConfiguration());
 
 	protected ComplexCopyManager controller;
 
@@ -42,8 +42,8 @@ public class ComplexCopyManagerUnitTest {
 
 	@Before
 	public void setUp() throws IOException {
-		final File findLinksDirectory = factory.getDefaultOutputDirectory(TextfileType.Findlinks);
-		final File webcrawlDirectory = factory.getDefaultOutputDirectory(TextfileType.Webcrawl);
+		final File findLinksDirectory = factory.getDefaultOutputDirectory( TextFileType.Findlinks);
+		final File webcrawlDirectory = factory.getDefaultOutputDirectory( TextFileType.Webcrawl);
 		
 		assertThat(IOUtil.removeDirectory(findLinksDirectory), is(true));
 		assertThat(IOUtil.removeDirectory(webcrawlDirectory), is(true));
@@ -61,8 +61,8 @@ public class ComplexCopyManagerUnitTest {
 
 	@After
 	public void tearDown() {
-		final File findLinksDirectory = factory.getDefaultOutputDirectory(TextfileType.Findlinks);
-		final File webcrawlDirectory = factory.getDefaultOutputDirectory(TextfileType.Webcrawl);
+		final File findLinksDirectory = factory.getDefaultOutputDirectory( TextFileType.Findlinks);
+		final File webcrawlDirectory = factory.getDefaultOutputDirectory( TextFileType.Webcrawl);
 		
 		IOUtil.removeDirectory(findLinksDirectory);
 		IOUtil.removeDirectory(webcrawlDirectory);

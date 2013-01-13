@@ -1,17 +1,11 @@
 package de.uni_leipzig.informatik.asv.wortschatz.flcr.util;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.google.common.base.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Predicate;
-
-import de.uni_leipzig.asv.clarin.common.tuple.Pair;
+import java.util.Hashtable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class SelectorPool<T> {
 

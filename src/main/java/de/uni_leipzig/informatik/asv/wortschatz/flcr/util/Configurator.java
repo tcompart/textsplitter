@@ -1,12 +1,11 @@
 package de.uni_leipzig.informatik.asv.wortschatz.flcr.util;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Properties;
+import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.TextFile;
 
-import de.uni_leipzig.asv.clarin.common.io.PropertyReader;
-import de.uni_leipzig.asv.clarin.common.io.exception.EntryNotFoundException;
-import de.uni_leipzig.informatik.asv.wortschatz.flcr.textfile.Textfile;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
 
 public class Configurator {
 
@@ -14,13 +13,12 @@ public class Configurator {
 
 	public static final String PROPERTY_BASE_OUTPUT = "flcr.output.base";
 	public static final String PROPERTY_BASE_FILE_EXTENSION = PROPERTY_BASE_OUTPUT + ".file.extension";
-	
+
 	public static final String PROPERTY_SPLIT_PREFIX = "flcr.split";
 	public static final String PROPERTY_SPLIT_SIZE = PROPERTY_SPLIT_PREFIX + ".size";
 	public static final String PROPERTY_LANGUAGE_LIST_NAME = PROPERTY_SPLIT_PREFIX + ".configuration.name";
 
-	
-	public static final long	DEFAULT_SPLIT_SIZE = 0;
+	public static final long DEFAULT_SPLIT_SIZE = 0;
 	public static final Integer DEFAULT_YEAR = 2012;
 	public static final String DEFAULT_BASE_OUTPUT_DIRECTORY = "/tmp";
 	public static final String DEFAULT_BASE_FILE_EXTENSION = ".txt";
@@ -28,152 +26,58 @@ public class Configurator {
 
 	private static Configurator configurator;
 
-	private final Integer year;
-	private final String baseOutputDirectory;
-	private final String baseFileExtension;
-	private final String textfileLanguageListName;
-	private final long baseFileSplitSize;
-
-	public Configurator() {
-		year = DEFAULT_YEAR;
-		baseOutputDirectory = DEFAULT_BASE_OUTPUT_DIRECTORY;
-		baseFileExtension = DEFAULT_BASE_FILE_EXTENSION;
-		textfileLanguageListName = DEFAULT_LANGUAGE_LIST_NAME;
-		baseFileSplitSize = DEFAULT_SPLIT_SIZE;
-	}
-
-	public Configurator(Properties properties) {
-
-		this.year = (properties.containsKey(PROPERTY_YEAR) ? Integer.parseInt(properties.getProperty(PROPERTY_YEAR))
-				: DEFAULT_YEAR);
-		this.baseOutputDirectory = (properties.containsKey(PROPERTY_BASE_OUTPUT) ? properties
-				.getProperty(PROPERTY_BASE_OUTPUT) : DEFAULT_BASE_OUTPUT_DIRECTORY);
-		this.baseFileExtension = (properties.containsKey(PROPERTY_BASE_FILE_EXTENSION) ? properties
-				.getProperty(PROPERTY_BASE_FILE_EXTENSION) : DEFAULT_BASE_FILE_EXTENSION);
-		this.textfileLanguageListName = (properties.containsKey(PROPERTY_LANGUAGE_LIST_NAME) ? properties
-				.getProperty(PROPERTY_LANGUAGE_LIST_NAME) : DEFAULT_LANGUAGE_LIST_NAME);
-		this.baseFileSplitSize = (properties.containsKey(PROPERTY_SPLIT_SIZE) ? Long.parseLong(properties.getProperty(PROPERTY_SPLIT_SIZE)) : DEFAULT_SPLIT_SIZE);
-	}
-
-	public Configurator(File propertyFile) throws FileNotFoundException {
-		PropertyReader reader = new PropertyReader(propertyFile);
-
-		Integer temporaryYear = 0;
-		try {
-			Integer value = Integer.parseInt(reader.getProperty(PROPERTY_YEAR));
-			if (value != null && value > 0) {
-				temporaryYear = value;
-			}
-		} catch (EntryNotFoundException e) {
-			// ignore -> catched
-		}
-		year = (temporaryYear != 0 ? temporaryYear : DEFAULT_YEAR);
-
-		String temporaryBaseDirectory = null;
-		try {
-			temporaryBaseDirectory = reader.getProperty(PROPERTY_BASE_OUTPUT);
-		} catch (EntryNotFoundException e) {
-			// ignore -> catched
-		}
-		this.baseOutputDirectory = (temporaryBaseDirectory != null ? temporaryBaseDirectory
-				: DEFAULT_BASE_OUTPUT_DIRECTORY);
-
-		String temporaryBaseOutputFileExtension = null;
-		try {
-			temporaryBaseOutputFileExtension = reader.getProperty(PROPERTY_BASE_FILE_EXTENSION);
-		} catch (EntryNotFoundException e) {
-			// ignore -> catched
-		}
-		this.baseFileExtension = (temporaryBaseOutputFileExtension != null ? temporaryBaseOutputFileExtension
-				: DEFAULT_BASE_FILE_EXTENSION);
-
-		String temporaryTextfileLanguageDomainFileName = null;
-		try {
-			temporaryTextfileLanguageDomainFileName = reader.getProperty(PROPERTY_LANGUAGE_LIST_NAME);
-		} catch (EntryNotFoundException ex) {
-			// ignore -> catched
-		}
-		this.textfileLanguageListName = (temporaryTextfileLanguageDomainFileName != null ? temporaryTextfileLanguageDomainFileName
-				: DEFAULT_LANGUAGE_LIST_NAME);
-		
-		long temporaryBaseFileSplitSize = 0;
-		try {
-			temporaryBaseFileSplitSize = Long.parseLong(reader.getProperty(PROPERTY_SPLIT_SIZE));
-		} catch (EntryNotFoundException ex) {
-			// ignore -> catched
-		}
-		this.baseFileSplitSize = (temporaryBaseFileSplitSize != 0 ? temporaryBaseFileSplitSize : DEFAULT_SPLIT_SIZE);
-		
-	}
-
-	public Configurator(Configurator inputConfigurator) {
-		this.year = inputConfigurator.getYear();
-		this.baseOutputDirectory = inputConfigurator.getBaseOutputDirectory();
-		this.baseFileExtension = inputConfigurator.getDefaultFileExtension();
-		this.textfileLanguageListName = inputConfigurator.getTextfileLanguageListFileName();
-		this.baseFileSplitSize = inputConfigurator.getDefaultSplitSize();
-	}
-
-	public static Configurator getConfiguration() {
-		if (configurator == null) {
+	public static Configurator getGlobalConfiguration() {
+		if ( configurator == null ) {
 			configurator = new Configurator();
 		}
 		return configurator;
 	}
 
-	public static void setConfiguration(Configurator inputConfigurator) {
+	public static void setGlobalConfiguration( Configurator inputConfigurator ) {
 		configurator = inputConfigurator;
 	}
 
+	private final Properties properties;
+
+	public Configurator() {
+		this( new Properties() );
+	}
+
+	public Configurator( Properties properties ) {
+		this.properties = properties;
+	}
+
+	public Configurator( File propertyFile ) throws IOException {
+		this( new Properties() );
+		properties.load( new FileInputStream( propertyFile ) );
+	}
+
+	public Configurator( Configurator inputConfigurator ) {
+		this.properties = inputConfigurator.properties;
+	}
+
 	public Integer getYear() {
-		return this.year;
+		return ( properties.containsKey( PROPERTY_YEAR ) ? Integer.parseInt( properties.getProperty( PROPERTY_YEAR ) ) : DEFAULT_YEAR );
+
 	}
 
 	public boolean includeYear() {
-		return this.getYear() > 0 && this.getYear() != Textfile.DEFAULT_YEAR;
+		return this.getYear() > 0 && !this.getYear().equals( TextFile.DEFAULT_YEAR );
 	}
 
 	public String getBaseOutputDirectory() {
-		return this.baseOutputDirectory;
-	}
-
-	@Override
-	public boolean equals(Object that) {
-
-		if (this == that) { return true; }
-
-		if (that == null || that.getClass() != this.getClass()) { return false; }
-
-		Configurator obj = (Configurator) that;
-
-		return this.baseOutputDirectory.equals(obj.baseOutputDirectory) && this.year.equals(obj.year);
-	}
-
-	@Override
-	public int hashCode() {
-
-		int hashCode = 23;
-		final int multiPrim = 37;
-
-		hashCode += hashCode * multiPrim + this.getYear().hashCode();
-		hashCode += hashCode * multiPrim + this.getBaseOutputDirectory().hashCode();
-		if (this.includeYear()) {
-			hashCode += hashCode * multiPrim + 2;
-		}
-		hashCode += hashCode * multiPrim + this.getDefaultFileExtension().hashCode();
-		hashCode += hashCode * multiPrim + this.getTextfileLanguageListFileName().hashCode();
-		return hashCode;
+		return ( properties.containsKey( PROPERTY_BASE_OUTPUT ) ? properties.getProperty( PROPERTY_BASE_OUTPUT ) : DEFAULT_BASE_OUTPUT_DIRECTORY );
 	}
 
 	public String getDefaultFileExtension() {
-		return this.baseFileExtension;
-	}
-	
-	public long getDefaultSplitSize() {
-		return this.baseFileSplitSize;
+		return ( properties.containsKey( PROPERTY_BASE_FILE_EXTENSION ) ? properties.getProperty( PROPERTY_BASE_FILE_EXTENSION ) : DEFAULT_BASE_FILE_EXTENSION );
 	}
 
-	public String getTextfileLanguageListFileName() {
-		return this.textfileLanguageListName;
+	public long getDefaultSplitSize() {
+		return ( properties.containsKey( PROPERTY_SPLIT_SIZE ) ? Long.parseLong( properties.getProperty( PROPERTY_SPLIT_SIZE ) ) : DEFAULT_SPLIT_SIZE );
+	}
+
+	public String getTextFileLanguageListFileName() {
+		return ( properties.containsKey( PROPERTY_LANGUAGE_LIST_NAME ) ? properties.getProperty( PROPERTY_LANGUAGE_LIST_NAME ) : DEFAULT_LANGUAGE_LIST_NAME );
 	}
 }

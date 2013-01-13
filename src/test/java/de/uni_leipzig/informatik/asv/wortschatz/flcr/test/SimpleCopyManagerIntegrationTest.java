@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.Queue;
 
 import org.junit.After;
 import org.junit.Before;
@@ -52,15 +53,16 @@ public class SimpleCopyManagerIntegrationTest {
 	
 	@After
 	public void tearDown() {
-		assertThat(this.outputDirectory.exists(), is(true));
-		assertThat(IOUtil.removeDirectory(outputDirectory), is(true));
+		if (this.outputDirectory.exists()) {
+			IOUtil.removeDirectory(outputDirectory);
+		}
 	}
 	
 	
 	@Test
 	public void copy() throws FileNotFoundException {
 		
-		final File inputDirectory = new FileSystemResource("Unigramm").getFile();
+		final File inputDirectory = new FileSystemResource("testFiles").getFile();
 		Properties properties = new Properties();
 		properties.put(Configurator.PROPERTY_BASE_OUTPUT, this.outputDirectory.getAbsolutePath());
 		
@@ -84,6 +86,17 @@ public class SimpleCopyManagerIntegrationTest {
 		}
 		
 	}
-	
+
+	@Test
+	public void assertNumberOfFoundFiles() throws IOException {
+		IOUtilIntegrationTest.createRecursivelyFiles();
+		SimpleCopyManager manager = new SimpleCopyManager(IOUtilIntegrationTest.directory, new Configurator());
+		Queue<File> fileQueue = manager.getFileQueue();
+
+		assertThat(fileQueue.size(), is(IOUtilIntegrationTest.CONSTANT_I*IOUtilIntegrationTest.CONSTANT_J*IOUtilIntegrationTest.CONSTANT_K));
+
+
+	}
+
 	
 }
