@@ -32,14 +32,14 @@ public class ComplexCopyManagerIntegrationTest extends ComplexCopyManagerUnitTes
 		controller.start();
 		
 		assertThat(controller.isRunning(), is(true));
-		assertThat(controller.isStoped(), is(false));
+		assertThat(controller.isStopped(), is(false));
 		
 		assertThat(controller.awaitTermination(), is(true));
 		
 		Thread.sleep(100);
 		
 		assertThat(controller.isRunning(), is(false));
-		assertThat(controller.isStoped(), is(true));
+		assertThat(controller.isStopped(), is(true));
 		
 		final TextFile textFile = new TextFile(textfileFile);
 

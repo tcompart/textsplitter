@@ -18,9 +18,10 @@ import de.uni_leipzig.informatik.asv.wortschatz.flcr.util.ReachedEndException;
 
 public class TaskProducer implements Runnable, Stoppable {
 
+	private static final Object SEMAPHORE = new Object();
 	private static final Logger log = LoggerFactory.getLogger(TaskProducer.class);
 	private static final AtomicInteger instanceCount = new AtomicInteger(0);
-	
+
 	private final BlockingQueue<File> fileQueue;
 	private final MappingFactory mappingFactory ;
 	private final BlockingQueue<Task> outputQueue;
@@ -71,7 +72,7 @@ public class TaskProducer implements Runnable, Stoppable {
 						this.writeOutput(out, "Took textFile '"+file.getAbsolutePath()+"'");
 					}
 					
-					Source source = null;
+					Source source;
 					try {
 						// 4. FOR EVERY SOURCE OF TEXTFILE
 						while ((source = textFile.getNext()) != null) {
@@ -86,10 +87,9 @@ public class TaskProducer implements Runnable, Stoppable {
 							// 5. OFFER TASK TO QUEUE
 							while (!this.outputQueue.offer(task)) {
 								// WAIT OTHERWISE
-								final Thread thread = Thread.currentThread();
-								synchronized (thread) {
+								synchronized (SEMAPHORE) {
 									try {
-										thread.wait(1000);
+										SEMAPHORE.wait(1000);
 									} catch (InterruptedException e) {
 										log.warn("[{}]: Interrupted while waiting to add task {} to blocking queue.", this.getInstanceName(), task.getUniqueIdentifier());
 									}
@@ -137,7 +137,7 @@ public class TaskProducer implements Runnable, Stoppable {
 	}
 
 	@Override
-	public boolean isStoped() {
+	public boolean isStopped() {
 		return this.isStoped;
 	}
 

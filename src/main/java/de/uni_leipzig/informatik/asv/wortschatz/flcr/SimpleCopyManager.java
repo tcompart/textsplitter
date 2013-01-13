@@ -38,7 +38,7 @@ public class SimpleCopyManager implements CopyManager {
 		this.mappingFactory = new MappingFactory(inputConfigurator);
 		final Collection<File> files = IOUtil.getFiles(inputDirectory, true);
 		
-		assert files.isEmpty() == false;
+		assert !files.isEmpty();
 		
 		this.queue = new ArrayBlockingQueue<File>(files.size(), true, files);
 		this.instanceName = String.format("%s_%d", SimpleCopyManager.class.getSimpleName().toLowerCase(), instanceCount.incrementAndGet());
@@ -70,7 +70,7 @@ public class SimpleCopyManager implements CopyManager {
 			this.writeOutput(out, "Starting to query file queue. Number of entries: "+this.getFileQueue().size());
 		}
 		
-		while (!isStoped()) {
+		while (!isStopped()) {
 			file = this.getFileQueue().poll();
 			try {
 				long textFileTime = System.nanoTime();
@@ -121,11 +121,11 @@ public class SimpleCopyManager implements CopyManager {
 
 	@Override
 	public boolean isRunning() {
-		return !this.isStoped();
+		return !this.isStopped();
 	}
 
 	@Override
-	public boolean isStoped() {
+	public boolean isStopped() {
 		return this.stop;
 	}
 

@@ -52,12 +52,11 @@ public class ViewControllerIntegrationTest {
 	@Ignore("this test takes just tooo long...")
 	@Test
 	public void inputAndOutputAssigned() throws IOException, InterruptedException, ExecutionException {
-		
 		ViewController.main(VALID_STATEMENT.split(" "));
-		
 		assertThat(outputDirectory.exists(), is(true));
 		assertThat(outputDirectory.isDirectory(), is(true));
-		assertThat(outputDirectory.listFiles().length > 0, is(true));
+		final File[] files = outputDirectory.listFiles();
+		assertThat(files == null || files.length > 0, is(true));
 	}
 
 }

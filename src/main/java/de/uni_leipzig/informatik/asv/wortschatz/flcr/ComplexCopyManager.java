@@ -158,7 +158,7 @@ public class ComplexCopyManager implements CopyManager {
 		}
 		
 		for (Stoppable t : threads) {
-			if (!t.isStoped()) {
+			if (!t.isStopped()) {
 				return true;
 			}
 		}
@@ -166,7 +166,7 @@ public class ComplexCopyManager implements CopyManager {
 	}
 	
 	@Override
-	public boolean isStoped() {
+	public boolean isStopped() {
 		return !isRunning();
 	}
 

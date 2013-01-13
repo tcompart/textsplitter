@@ -77,7 +77,7 @@ public class ComplexCopyManagerUnitTest {
 	public void create() {
 		assertThat(controller, notNullValue());
 		assertThat(controller.isRunning(), is(false));
-		assertThat(controller.isStoped(), is(true));
+		assertThat(controller.isStopped(), is(true));
 	}
 
 	@Test(expected = NullPointerException.class)

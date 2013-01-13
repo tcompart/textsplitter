@@ -17,7 +17,7 @@ public interface CopyManager {
 
 	boolean isRunning();
 
-	boolean isStoped();
+	boolean isStopped();
 
 	boolean isSuccessful();
 	

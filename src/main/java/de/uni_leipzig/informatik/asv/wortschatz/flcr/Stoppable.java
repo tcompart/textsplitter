@@ -4,6 +4,6 @@ public interface Stoppable {
 
 	void stop();
 	
-	boolean isStoped();
+	boolean isStopped();
 	
 }

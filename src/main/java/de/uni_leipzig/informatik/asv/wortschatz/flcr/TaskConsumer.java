@@ -21,7 +21,7 @@ public class TaskConsumer implements Runnable, Stoppable {
 
 	private volatile boolean stop;
 	
-	private boolean isStoped = false;
+	private boolean isStopped = false;
 	
 	private final CyclicBarrier barrier;
 
@@ -37,7 +37,7 @@ public class TaskConsumer implements Runnable, Stoppable {
 
 	@Override
 	public void run() {
-		Task task = null;
+		Task task;
 		try {
 			while (!stop && !Thread.interrupted()) {
 				try {
@@ -59,10 +59,10 @@ public class TaskConsumer implements Runnable, Stoppable {
 				}
 			}
 		} catch (BrokenBarrierException ex) {
-			throw new RuntimeException(String.format("[%s]: broken free of barrier. Please check the logs for more details.", this.getInstanceName(), ex));
+			throw new RuntimeException(String.format("[%s]: broken free of barrier. Please check the logs for more details.", this.getInstanceName()), ex);
 		} finally {
 			log.info("[{}]: Bye.", this.getInstanceName());
-			isStoped = true;
+			isStopped = true;
 		}
 	}
 
@@ -70,8 +70,8 @@ public class TaskConsumer implements Runnable, Stoppable {
 		return this.instanceName;
 	}
 
-	public boolean isStoped() {
-		return isStoped;
+	public boolean isStopped() {
+		return isStopped;
 	}
 	
 	public synchronized void stop() {

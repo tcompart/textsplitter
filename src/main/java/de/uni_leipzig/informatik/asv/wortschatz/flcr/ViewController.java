@@ -13,7 +13,10 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,15 +29,14 @@ public class ViewController implements Callable<Boolean> {
 	public static final Parameter<?> HELP = ParameterFactory.createParameter( 'h', "help" ).setNeedsArgument( ParameterConfiguration.NO_ARGUMENTS ).setRequired( false ).build();
 	public static final Parameter<?> VERBOSE = ParameterFactory.createParameter( 'v', "verbose" ).setNeedsArgument( ParameterConfiguration.NO_ARGUMENTS ).setRequired( false ).build();
 	public static final Parameter<File> OUTPUT = ParameterFactory.<File>createParameter( 'o', "output" ).setNeedsArgument( ParameterConfiguration.ONE_ARGUMENT ).setRequired( false ).build();
-	public static final Parameter<File> INPUT = ParameterFactory.<File>createParameter( 'i', "input").setNeedsArgument( ParameterConfiguration.ONE_ARGUMENT).setRequired( true ).build();
-	public static final Parameter<File> PROPERTY = ParameterFactory.<File>createParameter( 'p', "properties").setNeedsArgument(ParameterConfiguration.ONE_ARGUMENT).setRequired( false ).build();
-	public static final Parameter<?> NO_THREADS = ParameterFactory.createParameter( ParameterFactory.NO_SHORT_OPTION, "no-threads").setNeedsArgument( ParameterConfiguration.NO_ARGUMENTS).setRequired( false ).build();
-	public static final Parameter<?> DEBUG = ParameterFactory.createParameter('d', "debug").setNeedsArgument( ParameterConfiguration.NO_ARGUMENTS).setRequired( false ).build();
-	public static final Parameter<?> STDOUT = ParameterFactory.createParameter('s', "stdout").setNeedsArgument( ParameterConfiguration.NO_ARGUMENTS).setRequired( false ).build();
-	public static final Parameter<Integer> NR_THREADS = ParameterFactory.<Integer>createParameter( 'n', "numberOfThreads").setNeedsArgument( ParameterConfiguration.ONE_ARGUMENT).setRequired( false ).build();
+	public static final Parameter<File> INPUT = ParameterFactory.<File>createParameter( 'i', "input" ).setNeedsArgument( ParameterConfiguration.ONE_ARGUMENT ).setRequired( true ).build();
+	public static final Parameter<File> PROPERTY = ParameterFactory.<File>createParameter( 'p', "properties" ).setNeedsArgument( ParameterConfiguration.ONE_ARGUMENT ).setRequired( false ).build();
+	public static final Parameter<?> NO_THREADS = ParameterFactory.createParameter( ParameterFactory.NO_SHORT_OPTION, "no-threads" ).setNeedsArgument( ParameterConfiguration.NO_ARGUMENTS ).setRequired( false ).build();
+	public static final Parameter<?> DEBUG = ParameterFactory.createParameter( 'd', "debug" ).setNeedsArgument( ParameterConfiguration.NO_ARGUMENTS ).setRequired( false ).build();
+	public static final Parameter<?> STDOUT = ParameterFactory.createParameter( 's', "stdout" ).setNeedsArgument( ParameterConfiguration.NO_ARGUMENTS ).setRequired( false ).build();
+	public static final Parameter<Integer> NR_THREADS = ParameterFactory.<Integer>createParameter( 'n', "numberOfThreads" ).setNeedsArgument( ParameterConfiguration.ONE_ARGUMENT ).setRequired( false ).build();
 
-	private static final Logger log = LoggerFactory
-											  .getLogger( ViewController.class );
+	private static final Logger log = LoggerFactory.getLogger( ViewController.class );
 
 	private static final AtomicInteger instance_counter = new AtomicInteger( 0 );
 	private final Configurator configuration;
@@ -43,28 +45,19 @@ public class ViewController implements Callable<Boolean> {
 	private final boolean useStdout;
 	private final int numberOfThreads;
 
-	public ViewController( final Properties properties, final File inputFile,
-						   final int numberOfThreads, boolean stdout )
-			throws FileNotFoundException {
+	public ViewController( final Properties properties, final File inputFile, final int numberOfThreads, boolean stdout ) throws FileNotFoundException {
 		this( new Configurator( properties ), inputFile, numberOfThreads, stdout );
 	}
 
-	public ViewController( final Configurator configurator,
-						   final File inputDirectory, final int inputNumberOfThreads,
-						   boolean stdout ) throws FileNotFoundException {
+	public ViewController( final Configurator configurator, final File inputDirectory, final int inputNumberOfThreads, boolean stdout ) throws FileNotFoundException {
 		if ( configurator == null ) {
-			throw new IllegalArgumentException( String.format(
-																	 "Assigned parameter instance of class %s points to null.",
-																	 Configurator.class.getSimpleName() ) );
+			throw new IllegalArgumentException( String.format( "Assigned parameter instance of class %s points to null.", Configurator.class.getSimpleName() ) );
 		}
 
 		// the next statement would provoke a null pointer exception, if
 		// inputFile would be null (therefore no NPE for inputfile)
 		if ( !inputDirectory.exists() || !inputDirectory.canRead() ) {
-			throw new FileNotFoundException(
-												   String.format(
-																		"File '%s' could not be found. Furthermore it has to be redable!",
-																		inputDirectory.getAbsolutePath() ) );
+			throw new FileNotFoundException( String.format( "File '%s' could not be found. Furthermore it has to be redable!", inputDirectory.getAbsolutePath() ) );
 		}
 
 		this.configuration = configurator;
@@ -72,15 +65,12 @@ public class ViewController implements Callable<Boolean> {
 		this.flcrInputDirectory = inputDirectory;
 		this.numberOfThreads = inputNumberOfThreads;
 		this.useStdout = stdout;
-		log.info( "Initiliazed {} instance '{}'.",
-						ViewController.class.getSimpleName(), this );
+		log.info( "Initiliazed {} instance '{}'.", ViewController.class.getSimpleName(), this );
 	}
 
 	@Override
 	public String toString() {
-		return String.format( "%s_%d {Configuration='%s', File='%s'}",
-									ViewController.class.getSimpleName(), this.instance_number,
-									this.configuration, this.flcrInputDirectory.getAbsolutePath() );
+		return String.format( "%s_%d {Configuration='%s', File='%s'}", ViewController.class.getSimpleName(), this.instance_number, this.configuration, this.flcrInputDirectory.getAbsolutePath() );
 	}
 
 	@Override
@@ -91,11 +81,9 @@ public class ViewController implements Callable<Boolean> {
 
 		final CopyManager copy;
 		if ( numberOfThreads > 0 )
-			copy = new ComplexCopyManager( this.flcrInputDirectory,
-												 this.configuration, numberOfThreads );
+			copy = new ComplexCopyManager( this.flcrInputDirectory, this.configuration, numberOfThreads );
 		else
-			copy = new SimpleCopyManager( this.flcrInputDirectory,
-												this.configuration );
+			copy = new SimpleCopyManager( this.flcrInputDirectory, this.configuration );
 
 		copy.setOutputStream( System.out );
 		copy.start();
@@ -105,36 +93,32 @@ public class ViewController implements Callable<Boolean> {
 			( ( ComplexCopyManager ) copy ).awaitTermination();
 		}
 
-		final boolean result = copy.isStoped() && copy.isSuccessful();
+		final boolean result = copy.isStopped() && copy.isSuccessful();
 
 		if ( useStdout )
-			System.out
-					.println( "Stoping CopyManager:  => stoped & succesful == "
-									  + result );
+			System.out.println( "Stoping CopyManager:  => stoped & succesful == " + result );
 
 		return result;
 	}
 
-	public static void main( String... args ) throws IOException,
-															 InterruptedException, ExecutionException {
+	public static void main( String... args ) throws IOException, InterruptedException, ExecutionException {
 
-		Collection<Parameter<?>> allParameters = Collections
-														 .unmodifiableList( new ArrayList<Parameter<?>>() {
+		Collection<Parameter<?>> allParameters = Collections.unmodifiableList( new ArrayList<Parameter<?>>() {
 
-															 private static final long serialVersionUID = 1L;
+			private static final long serialVersionUID = 1L;
 
-															 {
-																 add( HELP );
-																 add( VERBOSE );
-																 add( OUTPUT );
-																 add( INPUT );
-																 add( PROPERTY );
-																 add( NO_THREADS );
-																 add( DEBUG );
-																 add( STDOUT );
-																 add( NR_THREADS );
-															 }
-														 } );
+			{
+				add( HELP );
+				add( VERBOSE );
+				add( OUTPUT );
+				add( INPUT );
+				add( PROPERTY );
+				add( NO_THREADS );
+				add( DEBUG );
+				add( STDOUT );
+				add( NR_THREADS );
+			}
+		} );
 		// parse parameters with defined parameters
 		ParameterResult result = ParameterFactory.parse( args, allParameters );
 
@@ -142,8 +126,8 @@ public class ViewController implements Callable<Boolean> {
 		 * 1. CHECK FOR POSSIBLE HELP
 		 */
 
-		assert System.out instanceof OutputStream;
-		assert System.err instanceof OutputStream;
+		assert System.out != null;
+		assert System.err != null;
 
 		if ( result.hasParameter( VERBOSE ) ) {
 			org.apache.log4j.Logger.getRootLogger().setLevel( Level.INFO );
@@ -154,8 +138,7 @@ public class ViewController implements Callable<Boolean> {
 		}
 
 		if ( result.hasParameter( HELP ) ) {
-			ParameterFactory.printHelp( System.out, System.err, result,
-											  allParameters );
+			ParameterFactory.printHelp( System.out, System.err, result, allParameters );
 			// break the loop
 			return;
 		}
@@ -165,14 +148,11 @@ public class ViewController implements Callable<Boolean> {
 		 */
 		final Maybe<File> maybeInput = result.getValue( INPUT );
 		if ( maybeInput.isNothing() ) {
-			throw new IllegalArgumentException( String.format(
-																	 "Requiring the input directory assigned by parameter '%s'",
-																	 INPUT ) );
+			throw new IllegalArgumentException( String.format( "Requiring the input directory assigned by parameter '%s'", INPUT ) );
 		} else if ( !maybeInput.get().exists() ) {
 			ParameterFactory.printHelp( System.out, System.err, result,
 											  allParameters );
-			throw new FileNotFoundException(
-												   "Requiring input directory. Please assign an existing directory file path as a source directory." );
+			throw new FileNotFoundException( "Requiring input directory. Please assign an existing directory file path as a source directory." );
 		}
 		final File inputFile = maybeInput.get();
 
@@ -185,15 +165,12 @@ public class ViewController implements Callable<Boolean> {
 		 * 3.1 INTERNAL CLASSPATH PROPERTIES
 		 */
 		final String defaultPropertyName = "default.properties";
-		final Resource classPathResource = new ClassPathResource(
-																		defaultPropertyName );
+		final Resource classPathResource = new ClassPathResource( defaultPropertyName );
 		if ( classPathResource.exists() ) {
-			log.info( "Loading properties of property file '{}'.",
-							defaultPropertyName );
+			log.info( "Loading properties of property file '{}'.", defaultPropertyName );
 			properties.load( classPathResource.getInputStream() );
 		} else {
-			log.warn( "Default properties '{}' of application did not exist.",
-							defaultPropertyName );
+			log.warn( "Default properties '{}' of application did not exist.", defaultPropertyName );
 		}
 
 		/*
@@ -202,16 +179,12 @@ public class ViewController implements Callable<Boolean> {
 		// file system resource will therefore overwrite classpath resource
 		// properties
 		final String applicationPropertyName = "application.properties";
-		final Resource fileSystemResource = new FileSystemResource(
-																		  applicationPropertyName );
+		final Resource fileSystemResource = new FileSystemResource( applicationPropertyName );
 		if ( fileSystemResource.exists() ) {
-			log.info( "Loading properties of property file '{}'.",
-							applicationPropertyName );
+			log.info( "Loading properties of property file '{}'.", applicationPropertyName );
 			properties.load( fileSystemResource.getInputStream() );
 		} else {
-			log.warn(
-							"Application properties '{}' in the current directory could not be found.",
-							applicationPropertyName );
+			log.warn( "Application properties '{}' in the current directory could not be found.", applicationPropertyName );
 		}
 
 		/*
@@ -223,9 +196,7 @@ public class ViewController implements Callable<Boolean> {
 			// FILESYSTEM DEFAULT
 			properties.load( new FileInputStream( maybeProperties.get() ) );
 		} else {
-			log.warn(
-							"Assuming the default properties previously defined or directly by class '{}' if not defined",
-							Configurator.class.getName() );
+			log.warn( "Assuming the default properties previously defined or directly by class '{}' if not defined", Configurator.class.getName() );
 		}
 
 		/*
@@ -235,25 +206,19 @@ public class ViewController implements Callable<Boolean> {
 		if ( maybeOutput.isJust() ) {
 			final File outputDirectory = maybeOutput.get();
 			if ( outputDirectory.mkdirs()
-						 || ( outputDirectory.exists() && outputDirectory
-																  .isDirectory() ) ) {
-				properties.setProperty( Configurator.PROPERTY_BASE_OUTPUT,
-											  outputDirectory.getAbsolutePath() );
+						 || ( outputDirectory.exists() && outputDirectory.isDirectory() ) ) {
+				properties.setProperty( Configurator.PROPERTY_BASE_OUTPUT, outputDirectory.getAbsolutePath() );
 				log.info( "Setting output directory to '{}'",
 								outputDirectory.getAbsolutePath() );
 			} else
-				throw new IllegalArgumentException(
-														  "The assigned output directory" );
+				throw new IllegalArgumentException( "The assigned output directory" );
 		} else {
-			log.warn(
-							"Assuming output directory to be the default output directory: '{}'",
-							Configurator.DEFAULT_BASE_OUTPUT_DIRECTORY );
+			log.warn( "Assuming output directory to be the default output directory: '{}'", Configurator.DEFAULT_BASE_OUTPUT_DIRECTORY );
 		}
-
 		int numberOfThreads;
 		if ( result.hasParameter( NO_THREADS ) ) {
 			numberOfThreads = 0;
-			log.warn( "Deactivating thread-support. This may decrese the through-put speed." );
+			log.warn( "Deactivating thread-support. This may decrease the through-put speed." );
 		} else {
 			// this means that 2 threads run parallel as one set
 			numberOfThreads = 1;
@@ -264,10 +229,9 @@ public class ViewController implements Callable<Boolean> {
 				if ( maybeNumberOfThreadPairs.isJust() )
 					numberOfThreads = maybeNumberOfThreadPairs.get();
 				else
-					throw new IllegalArgumentException( String.format( "You assigned the parameter {} with a not understandable value: {}", NR_THREADS, result.getValue( NR_THREADS ) ) );
+					throw new IllegalArgumentException( String.format( "You assigned the parameter %s with a not understandable value: %s", NR_THREADS, result.getValue( NR_THREADS ) ) );
 			}
 		}
-
 		final boolean useStdout;
 		if ( result.hasParameter( STDOUT ) ) {
 			useStdout = true;
@@ -275,19 +239,13 @@ public class ViewController implements Callable<Boolean> {
 		} else {
 			useStdout = false;
 		}
-
 		if ( result.hasParameter( DEBUG ) ) {
 			properties.store( System.out, "the loaded properties" );
 			return;
 		}
-
 		final ExecutorService ecs = Executors.newSingleThreadExecutor();
-		final Future<Boolean> future = ecs.submit( new ViewController(
-																			 properties, inputFile, numberOfThreads, useStdout ) );
-
+		final Future<Boolean> future = ecs.submit( new ViewController( properties, inputFile, numberOfThreads, useStdout ) );
 		future.get();
-
-		System.exit( 0 );
 	}
 
 }
